@@ -23,7 +23,29 @@ for (const row of mapping) {
     throw new Error("Source leaks across groups");
   groups.set(row.sourceId, row.group);
 }
-const ratios = (report) => {
+for (const [group, report] of [
+  ["discovery", discovery],
+  ["validation", validation],
+]) {
+  const expected = mapping
+    .filter((row) => row.group === group)
+    .map((row) => row.sha256)
+    .sort();
+  const actual = report.rows.map((row) => row.sha256).sort();
+  if (JSON.stringify(expected) !== JSON.stringify(actual))
+    throw new Error("Metric report does not match the mapped source group");
+}
+for (const row of mapping) {
+  const prefix = "samples/private/";
+  if (!row.image.startsWith(prefix))
+    throw new Error("Unexpected source image path");
+  const bytes = await readFile(
+    path.join(privateRoot, row.image.slice(prefix.length)),
+  );
+  if (createHash("sha256").update(bytes).digest("hex") !== row.sha256)
+    throw new Error("Source image hash mismatch");
+}
+const summarizeMetricOrdering = (report) => {
   const summary = {};
   for (const row of report.rows) {
     const identity = row.metrics.find((m) => m.kind === "identity");
@@ -66,13 +88,15 @@ for (const side of video.result) {
       1
     )
       throw new Error("Candidate pool spans over one second");
-    const best = (indices) =>
+    const pickSharpestUsable = (indices) =>
       side.measurements
         .filter((m) => indices.includes(m.index) && m.status === "usable")
         .sort((a, b) => b.sharpness - a.sharpness || a.index - b.index)[0]
         ?.index;
-    const a = best(w.indices),
-      b = best(w.compatibility.filter((c) => c.compatible).map((c) => c.index));
+    const a = pickSharpestUsable(w.indices),
+      b = pickSharpestUsable(
+        w.compatibility.filter((c) => c.compatible).map((c) => c.index),
+      );
     if (a !== w.sharpest.index || b !== w.compatibleSharpest.index)
       throw new Error("Stored selection is not the best eligible frame");
     windows.push({
@@ -102,8 +126,8 @@ const result = {
         mapping.filter((r) => r.group === g).length,
       ]),
     ),
-    discovery: ratios(discovery),
-    validation: ratios(validation),
+    discovery: summarizeMetricOrdering(discovery),
+    validation: summarizeMetricOrdering(validation),
     acceptance:
       "NOT RUN: no independent labels provided to this runner; no new threshold selected.",
     recommendation:
