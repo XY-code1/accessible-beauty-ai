@@ -164,8 +164,19 @@ export async function waitForCameraReady(page: Page) {
     page.getByRole("button", { name: "确认形状，拍画前照片" }),
   ).toBeEnabled();
 }
-export async function check(page: Page) {
+export async function check(
+  page: Page,
+  { waitForResult = true }: { waitForResult?: boolean } = {},
+) {
   await page.getByRole("button", { name: /^(检查这一步|重新检查)/ }).click();
   await page.getByRole("dialog").getByRole("checkbox").check();
   await page.getByRole("button", { name: "拍摄并检查" }).click();
+  if (waitForResult) {
+    // Wait for this capture, not a previous result behind the dialog. The
+    // countdown + sampling + first analysis can exceed the default 5s assertion.
+    await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 15_000 });
+    await expect(
+      page.getByRole("heading", { name: "看看这次的结果" }),
+    ).toBeVisible();
+  }
 }

@@ -50,7 +50,7 @@ test("stalled source sampling is bounded and never reuses a frame five times", a
   await expect(
     page.getByRole("heading", { name: "先画一小段眼尾" }),
   ).toBeVisible();
-  await check(page);
+  await check(page, { waitForResult: false });
   const before = await page.evaluate(
     () =>
       (window as unknown as { __cameraTest: { captures: number } }).__cameraTest

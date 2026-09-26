@@ -79,7 +79,7 @@ test("face loss hides the guide and failed capture returns no judgment", async (
   await expect(
     page.getByRole("heading", { name: "先画一小段眼尾" }),
   ).toBeVisible();
-  await check(page);
+  await check(page, { waitForResult: false });
   await setCamera(page, { face: false });
   await expect(page.getByLabel("眼线参考路径")).toHaveAttribute(
     "data-visible",
@@ -104,7 +104,7 @@ test("duplicate clicks and cancel prevent stale completion; side/target changes 
   await expect(
     page.getByRole("heading", { name: "先画一小段眼尾" }),
   ).toBeVisible();
-  await check(page);
+  await check(page, { waitForResult: false });
   await expect(
     page.getByRole("button", { name: "正在处理…", exact: true }),
   ).toBeDisabled();
@@ -125,7 +125,7 @@ test("duplicate clicks and cancel prevent stale completion; side/target changes 
   await page.getByRole("button", { name: "拍画前照片", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "先画一小段眼尾" }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15_000 });
   await setCamera(page, { mark: "none" });
   await check(page);
   await expect(page.getByText("这次无法判断", { exact: true })).toBeVisible();
