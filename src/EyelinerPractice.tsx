@@ -241,7 +241,7 @@ export default function EyelinerPractice({
                 <div className="view-hint">
                   {session.paused
                     ? "休息一下，准备好再继续"
-                    : "请把脸移到画面中间"}
+                    : "眼部暂时被遮挡或移出画面，请移开手或工具并正视镜头。摄像头仍在运行。"}
                 </div>
               )}
               {visible && showGuide && (
@@ -357,7 +357,7 @@ export default function EyelinerPractice({
                 <p className="detail-placeholder">
                   {session.paused
                     ? "已暂停，恢复后显示实时画面"
-                    : "等待眼部定位，不显示旧画面"}
+                    : "眼部暂时被遮挡或移出画面；摄像头仍在运行，不显示旧画面。"}
                 </p>
               )}
               {active && visible && (

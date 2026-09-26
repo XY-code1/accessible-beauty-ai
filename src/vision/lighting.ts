@@ -8,11 +8,11 @@ export function lightingMessage(data: Uint8ClampedArray): string {
   for (let i = 0; i < data.length; i += 4) {
     const value = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
     sum += value;
-    if (value >= 245) highlights++;
+    if (Math.round(value) >= 235) highlights++;
   }
-  return sum / count < 35
+  return sum / count < 55
     ? "眼部画面偏暗，可尝试增加均匀的正面光线。"
-    : highlights / count > 0.3
+    : highlights / count > 0.2
       ? "眼部高亮区域较多，可尝试调整位置、避开直射光。"
       : "";
 }

@@ -60,7 +60,7 @@ export function useLightingHint(
         const next = lightingMessage(data);
         repeats = next === candidate ? repeats + 1 : 1;
         candidate = next;
-        if (repeats >= 3) setHint(next);
+        if (repeats >= (next ? 4 : 3)) setHint(next);
       } catch {
         candidate = "";
         repeats = 0;
