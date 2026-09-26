@@ -67,6 +67,8 @@ export async function installCamera(
                     value = 105;
                 }
                 if (mark === "blur") value = 195;
+                if (mark === "dark") value = 18;
+                if (mark === "bright") value = 252;
                 const i = (y * 640 + x) * 4;
                 data.data[i] = data.data[i + 1] = data.data[i + 2] = value;
                 data.data[i + 3] = 255;

@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
+import { useLightingHint } from "./eyeliner/useLightingHint";
 import GuideCanvas from "./guidance/GuideCanvas";
 import type { GuideMode } from "./guidance/render";
 import { initialSession, sessionReducer } from "./session";
@@ -82,6 +83,12 @@ export default function EyelinerPractice({
   const inPractice = session.step === "wing" || session.step === "connect";
   const active = cameraStatus === "ready",
     visible = active && !!vision?.eye && !session.paused;
+  const lightingHint = useLightingHint(
+    videoRef,
+    vision,
+    visible && !intent && !session.result,
+    session.revision,
+  );
   const canCapture = visible && !session.pending;
   const currentStep = stepIndex[session.step];
   const status = session.paused
@@ -158,6 +165,12 @@ export default function EyelinerPractice({
             </li>
           ))}
         </ol>
+        {lightingHint && (
+          <p className="lighting-hint" role="status">
+            <span>{lightingHint}</span>{" "}
+            <small>仅供拍摄参考，不影响继续练习。</small>
+          </p>
+        )}
         <div className="workspace">
           <section
             className="mirror-card"
