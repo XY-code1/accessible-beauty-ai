@@ -63,7 +63,7 @@ for (const side of ["left", "right"] as const) {
         .click();
       await expect(
         page.getByRole("heading", { name: "先画一小段眼尾" }),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 15_000 });
       await setCamera(page, { mark: "high" });
       await check(page);
       await expect(

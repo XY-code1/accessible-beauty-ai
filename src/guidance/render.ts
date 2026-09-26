@@ -109,7 +109,7 @@ export function drawGuide(
       size = labels ? 12 : 7;
     const tip = {
       x: middle.x + (ux * size) / 2,
-      y: (labels ? 30 : middle.y - offset) + (uy * size) / 2,
+      y: Math.max(12, middle.y - offset) + (uy * size) / 2,
     };
     ctx.strokeStyle = "#efffda";
     ctx.lineWidth = 2;

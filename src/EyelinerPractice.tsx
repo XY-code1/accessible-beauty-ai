@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
+import { useLightingHint } from "./eyeliner/useLightingHint";
 import GuideCanvas from "./guidance/GuideCanvas";
 import type { GuideMode } from "./guidance/render";
 import { initialSession, sessionReducer } from "./session";
@@ -82,6 +83,12 @@ export default function EyelinerPractice({
   const inPractice = session.step === "wing" || session.step === "connect";
   const active = cameraStatus === "ready",
     visible = active && !!vision?.eye && !session.paused;
+  const lightingHint = useLightingHint(
+    videoRef,
+    vision,
+    visible && !intent && !session.result,
+    session.revision,
+  );
   const canCapture = visible && !session.pending;
   const currentStep = stepIndex[session.step];
   const status = session.paused
@@ -158,6 +165,12 @@ export default function EyelinerPractice({
             </li>
           ))}
         </ol>
+        {lightingHint && (
+          <p className="lighting-hint" role="status">
+            <span>{lightingHint}</span>{" "}
+            <small>仅供拍摄参考，不影响继续练习。</small>
+          </p>
+        )}
         <div className="workspace">
           <section
             className="mirror-card"
@@ -228,7 +241,7 @@ export default function EyelinerPractice({
                 <div className="view-hint">
                   {session.paused
                     ? "休息一下，准备好再继续"
-                    : "请把脸移到画面中间"}
+                    : "眼部暂时被遮挡或移出画面，请移开手或工具并正视镜头。摄像头仍在运行。"}
                 </div>
               )}
               {visible && showGuide && (
@@ -344,7 +357,7 @@ export default function EyelinerPractice({
                 <p className="detail-placeholder">
                   {session.paused
                     ? "已暂停，恢复后显示实时画面"
-                    : "等待眼部定位，不显示旧画面"}
+                    : "眼部暂时被遮挡或移出画面；摄像头仍在运行，不显示旧画面。"}
                 </p>
               )}
               {active && visible && (

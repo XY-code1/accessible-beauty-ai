@@ -5,6 +5,11 @@ test("keyboard can cancel capture, recover focus and complete both steps", async
   page,
 }) => {
   await installCamera(page);
+  // Reproduce a slow first OpenCV load: countdown + capture + loading exceed 5s.
+  await page.route("**/assets/opencv.js", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 6000));
+    await route.continue();
+  });
   await page.addInitScript(() => {
     Object.defineProperty(window, "speechSynthesis", {
       configurable: true,
@@ -48,7 +53,7 @@ test("keyboard can cancel capture, recover focus and complete both steps", async
   await page.keyboard.press("Enter");
   await expect(
     page.getByRole("heading", { name: "先画一小段眼尾" }),
-  ).toBeFocused();
+  ).toBeFocused({ timeout: 15_000 });
   await setCamera(page, { mark: "close" });
   for (const next of [
     "我已看过结果，继续下一步 →",
@@ -60,7 +65,7 @@ test("keyboard can cancel capture, recover focus and complete both steps", async
     await page.keyboard.press("Enter");
     await expect(
       page.getByRole("heading", { name: "看看这次的结果" }),
-    ).toBeFocused();
+    ).toBeFocused({ timeout: 15_000 });
     await press(next);
   }
   await expect(
