@@ -3,6 +3,10 @@ import { eyeCrop } from "../guidance/geometry";
 import { lightingMessage } from "../vision/lighting";
 import type { VisionOutput } from "../types";
 
+export const LIGHTING_SAMPLE_MS = 500;
+export const LIGHTING_SHOW_SAMPLES = 4;
+export const LIGHTING_CLEAR_SAMPLES = 3;
+
 // Advisory only: these conservative pixel thresholds never gate capture or analysis.
 export function useLightingHint(
   video: RefObject<HTMLVideoElement | null>,
@@ -60,13 +64,17 @@ export function useLightingHint(
         const next = lightingMessage(data);
         repeats = next === candidate ? repeats + 1 : 1;
         candidate = next;
-        if (repeats >= (next ? 4 : 3)) setHint(next);
+        if (
+          repeats >=
+          (next ? LIGHTING_SHOW_SAMPLES : LIGHTING_CLEAR_SAMPLES)
+        )
+          setHint(next);
       } catch {
         candidate = "";
         repeats = 0;
         setHint("");
       }
-    }, 500);
+    }, LIGHTING_SAMPLE_MS);
     return () => clearInterval(timer);
   }, [video, enabled, detected, revision]);
   return enabled && detected ? hint : "";

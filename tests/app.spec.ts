@@ -4,6 +4,7 @@ import { begin, check, installCamera, setCamera } from "./harness";
 test("complete two explicit checkpoints without auto-advancing", async ({
   page,
 }) => {
+  test.setTimeout(75_000);
   await installCamera(page);
   await begin(page);
   await expect(

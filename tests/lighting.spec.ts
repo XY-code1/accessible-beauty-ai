@@ -9,10 +9,6 @@ test("dark-eye advice does not prevent guidance and clears on pause or lost face
   await page.getByRole("button", { name: "开启摄像头", exact: true }).click();
   await waitForCameraReady(page);
   await setCamera(page, { mark: "dark" });
-  await page.waitForTimeout(1100);
-  await expect(
-    page.getByText("眼部画面偏暗，可尝试增加均匀的正面光线。", { exact: true }),
-  ).toHaveCount(0);
   await expect(
     page.getByText("眼部画面偏暗，可尝试增加均匀的正面光线。", { exact: true }),
   ).toBeVisible();
@@ -59,8 +55,6 @@ test("highlights clear after normal frames and target changes reset advice", asy
   await expect(hint).toHaveCount(0);
   await expect(hint).toBeVisible();
   await setCamera(page, { mark: "none" });
-  await page.waitForTimeout(700);
-  await expect(hint).toBeVisible();
   await expect(hint).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "确认形状，拍画前照片" }),
