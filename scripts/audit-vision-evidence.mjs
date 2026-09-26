@@ -18,9 +18,13 @@ const discovery = await load("quality-metrics-report.json");
 const validation = await load("quality-validation/metrics-report.json");
 const video = await load("user-video-2026-09-25/report.json");
 const groups = new Map();
+const imageGroups = new Map();
 for (const row of mapping) {
   if (groups.has(row.sourceId) && groups.get(row.sourceId) !== row.group)
     throw new Error("Source leaks across groups");
+  if (imageGroups.has(row.sha256) && imageGroups.get(row.sha256) !== row.group)
+    throw new Error("Image hash leaks across groups");
+  imageGroups.set(row.sha256, row.group);
   groups.set(row.sourceId, row.group);
 }
 for (const [group, report] of [
@@ -73,7 +77,12 @@ for (const side of video.result) {
     if (
       !w.indices.length ||
       new Set(w.indices).size !== w.indices.length ||
-      w.compatibility.some((c) => !w.indices.includes(c.index)) ||
+      w.compatibility.length !== w.indices.length ||
+      new Set(w.compatibility.map((c) => c.index)).size !== w.indices.length ||
+      w.compatibility.some(
+        (c) =>
+          !w.indices.includes(c.index) || typeof c.compatible !== "boolean",
+      ) ||
       w.indices.includes(side.baseIndex) ||
       w.indices.length > 5
     )
@@ -82,6 +91,14 @@ for (const side of video.result) {
       side.measurements.find((m) => m.index === i),
     );
     if (measurements.some((m) => !m)) throw new Error("Missing measurement");
+    if (
+      measurements.some(
+        (m) =>
+          !Number.isFinite(m.timeSeconds) ||
+          (m.status === "usable" && !Number.isFinite(m.sharpness)),
+      )
+    )
+      throw new Error("Invalid measurement");
     if (
       Math.max(...measurements.map((m) => m.timeSeconds)) -
         Math.min(...measurements.map((m) => m.timeSeconds)) >
@@ -92,12 +109,15 @@ for (const side of video.result) {
       side.measurements
         .filter((m) => indices.includes(m.index) && m.status === "usable")
         .sort((a, b) => b.sharpness - a.sharpness || a.index - b.index)[0]
-        ?.index;
+        ?.index ?? null;
     const a = pickSharpestUsable(w.indices),
       b = pickSharpestUsable(
         w.compatibility.filter((c) => c.compatible).map((c) => c.index),
       );
-    if (a !== w.sharpest.index || b !== w.compatibleSharpest.index)
+    if (
+      a !== (w.sharpest?.index ?? null) ||
+      b !== (w.compatibleSharpest?.index ?? null)
+    )
       throw new Error("Stored selection is not the best eligible frame");
     windows.push({
       side: side.side,
@@ -105,12 +125,14 @@ for (const side of video.result) {
       baseline: side.baseIndex,
       a,
       b,
-      outcomeA: w.sharpest.outcome?.verdict ?? "not-run",
-      outcomeB: w.compatibleSharpest.outcome?.verdict ?? "not-run",
-      failureA: w.sharpest.diagnostics?.failure ?? null,
-      failureB: w.compatibleSharpest.diagnostics?.failure ?? null,
-      durationA: w.sharpest.outcome?.durationMs ?? null,
-      durationB: w.compatibleSharpest.outcome?.durationMs ?? null,
+      selectionA: a === null ? "no-eligible-frame" : "selected",
+      selectionB: b === null ? "no-eligible-frame" : "selected",
+      outcomeA: w.sharpest?.outcome?.verdict ?? "not-run",
+      outcomeB: w.compatibleSharpest?.outcome?.verdict ?? "not-run",
+      failureA: w.sharpest?.diagnostics?.failure ?? null,
+      failureB: w.compatibleSharpest?.diagnostics?.failure ?? null,
+      durationA: w.sharpest?.outcome?.durationMs ?? null,
+      durationB: w.compatibleSharpest?.outcome?.durationMs ?? null,
     });
   }
 }

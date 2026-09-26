@@ -11,7 +11,9 @@ export function useLightingHint(
   revision: number,
 ) {
   const latest = useRef(vision);
-  latest.current = vision;
+  useEffect(() => {
+    latest.current = vision;
+  }, [vision]);
   const [hint, setHint] = useState("");
   const detected = !!vision?.eye;
   useEffect(() => {

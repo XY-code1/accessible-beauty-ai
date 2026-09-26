@@ -1,6 +1,6 @@
 // Local-only diagnostic. No image is uploaded; generated photos must stay private.
-import { createServer } from "vite";
-import { stripTypeScriptTypes } from "node:module";
+import { createServer, transformWithOxc } from "vite";
+import { imageDataUrl } from "./image-data-url.mjs";
 import { chromium } from "@playwright/test";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
@@ -17,7 +17,7 @@ const old = execFileSync(
   ["show", `${baseline}:src/guidance/render.ts`],
   { encoding: "utf8" },
 );
-const previous = stripTypeScriptTypes(old);
+const { code: previous } = await transformWithOxc(old, "baseline-render.ts");
 const server = await createServer({
   server: { host: "127.0.0.1", port: 0 },
   logLevel: "error",
@@ -117,11 +117,7 @@ try {
       return { eyes, panels };
     },
     {
-      image:
-        "data:image/" +
-        (/\.png$/i.test(input) ? "png" : "jpeg") +
-        ";base64," +
-        bytes.toString("base64"),
+      image: imageDataUrl(bytes),
     },
   );
   await mkdir(output, { recursive: true });

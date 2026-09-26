@@ -1,5 +1,6 @@
 // Proxy diagnostics on existing private eye crops, not an exposure-labelled benchmark.
 import { createServer } from "vite";
+import { imageDataUrl } from "./image-data-url.mjs";
 import { chromium } from "@playwright/test";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -33,47 +34,44 @@ try {
     const bytes = await readFile(path.join(existingRoot, item.image));
     if (createHash("sha256").update(bytes).digest("hex") !== item.sha256)
       throw new Error("Input hash mismatch");
-    const metrics = await page.evaluate(
-      async (image) => {
-        const { lightingMessage } = await import("/src/vision/lighting.ts");
-        const img = new Image();
-        img.src = image;
-        await img.decode();
-        const canvas = document.createElement("canvas");
-        canvas.width = 32;
-        canvas.height = 24;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, 32, 24);
-        const raw = ctx.getImageData(0, 0, 32, 24);
-        const result = [];
-        for (const condition of [
-          "identity",
-          "dim85",
-          "dim20",
-          "clipped",
-          "half-shadow",
-        ]) {
-          const data = new Uint8ClampedArray(raw.data);
-          for (let i = 0; i < data.length; i += 4)
-            for (let c = 0; c < 3; c++) {
-              if (condition === "dim85") data[i + c] *= 0.85;
-              if (condition === "dim20") data[i + c] *= 0.2;
-              if (condition === "clipped") data[i + c] = 252;
-              if (condition === "half-shadow" && (i / 4) % 32 < 16)
-                data[i + c] *= 0.3;
-            }
-          const started = performance.now();
-          const message = lightingMessage(data);
-          result.push({
-            condition,
-            message,
-            durationMs: performance.now() - started,
-          });
-        }
-        return result;
-      },
-      "data:image/png;base64," + bytes.toString("base64"),
-    );
+    const metrics = await page.evaluate(async (image) => {
+      const { lightingMessage } = await import("/src/vision/lighting.ts");
+      const img = new Image();
+      img.src = image;
+      await img.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = 32;
+      canvas.height = 24;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, 32, 24);
+      const raw = ctx.getImageData(0, 0, 32, 24);
+      const result = [];
+      for (const condition of [
+        "identity",
+        "dim85",
+        "dim20",
+        "clipped",
+        "half-shadow",
+      ]) {
+        const data = new Uint8ClampedArray(raw.data);
+        for (let i = 0; i < data.length; i += 4)
+          for (let c = 0; c < 3; c++) {
+            if (condition === "dim85") data[i + c] *= 0.85;
+            if (condition === "dim20") data[i + c] *= 0.2;
+            if (condition === "clipped") data[i + c] = 252;
+            if (condition === "half-shadow" && (i / 4) % 32 < 16)
+              data[i + c] *= 0.3;
+          }
+        const started = performance.now();
+        const message = lightingMessage(data);
+        result.push({
+          condition,
+          message,
+          durationMs: performance.now() - started,
+        });
+      }
+      return result;
+    }, imageDataUrl(bytes));
     rows.push({
       reviewId: item.reviewId,
       sourceId: item.sourceId,
