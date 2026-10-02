@@ -10,6 +10,16 @@ test("enter the available eyeliner practice from the makeup workspace", async ({
     page.getByRole("heading", { name: "今天，从哪一步开始？" }),
   ).toBeVisible();
   await expect(page.getByText("尚未开放", { exact: true })).toHaveCount(4);
+  await expect(page.getByRole("heading", { name: "参与测试" })).toBeVisible();
+  await expect(
+    page.getByText("当前是眼线功能测试版。", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("不会自动上传人脸图片、视频、音频或面部关键点。", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "填写测试反馈" })).toHaveCount(0);
   await page.getByRole("link", { name: "开始眼线练习" }).click();
   await expect(page).toHaveURL(/#\/eyeliner$/);
   await expect(

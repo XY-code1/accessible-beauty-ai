@@ -1260,6 +1260,31 @@ footer p {
   font-size: 13px;
   max-width: 580px;
 }
+.test-invite {
+  margin-top: 28px;
+  padding: 24px;
+  border: 1px solid #d8ddcf;
+  border-radius: 18px;
+  background: #f7f6ef;
+}
+.test-invite h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+.test-invite ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #4c5d46;
+}
+.test-feedback-link {
+  width: fit-content;
+  margin-top: 18px;
+}
+.feedback-unavailable {
+  margin: 14px 0 0;
+  color: #53604b;
+  font-size: 12px;
+}
 @media (max-width: 680px) {
   .home-intro {
     padding: 30px 0 24px;
@@ -1286,6 +1311,9 @@ footer p {
   }
   .makeup-module p {
     font-size: 13px;
+  }
+  .test-invite {
+    padding: 20px 16px;
   }
 }
 
