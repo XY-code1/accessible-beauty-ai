@@ -1503,6 +1503,29 @@ footer p {
   flex: 1;
   min-width: 80px;
 }
+.opacity-setting {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 14px;
+}
+.opacity-setting label {
+  min-height: 0;
+}
+.opacity-setting output {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.opacity-setting input[type="range"] {
+  grid-column: 1 / -1;
+}
+.opacity-reset {
+  grid-column: 1 / -1;
+  justify-self: start;
+  min-height: 44px;
+  padding: 8px 14px;
+}
 .guide-modes button {
   color: #4d6140;
 }
