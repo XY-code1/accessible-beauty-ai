@@ -6,11 +6,13 @@ test("enter the available eyeliner practice from the makeup workspace", async ({
 }) => {
   await installCamera(page);
   await page.goto("/");
+  await expect(page.getByTestId("workspace-home")).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "今天，从哪一步开始？" }),
   ).toBeVisible();
   await expect(page.getByText("尚未开放", { exact: true })).toHaveCount(4);
   await page.getByRole("link", { name: "开始眼线练习" }).click();
+  await expect(page.getByTestId("eyeliner-practice")).toBeVisible();
   await expect(page).toHaveURL(/#\/eyeliner$/);
   await expect(
     page.getByRole("button", { name: "开启摄像头", exact: true }),
