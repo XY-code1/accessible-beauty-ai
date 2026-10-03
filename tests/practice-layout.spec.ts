@@ -72,9 +72,9 @@ test("display preferences keep the captured baseline and practice step", async (
   await begin(page);
   await page.getByRole("button", { name: "看效果", exact: true }).click();
   await page.getByRole("button", { name: "跟着画", exact: true }).click();
-  await page.getByText("参考线显示设置", { exact: true }).click();
+  await page.getByText("显示设置", { exact: true }).click();
   await page.getByLabel("高对比度参考线").check();
-  await page.getByLabel("参考线不透明度").fill("0.5");
+  await page.getByLabel("引导线透明度").fill("50");
   await expect(
     page.getByRole("heading", { name: "先画一小段眼尾" }),
   ).toBeVisible();
@@ -87,6 +87,71 @@ test("display preferences keep the captured baseline and practice step", async (
     "data-step",
     "wing",
   );
+});
+
+test("guide opacity defaults safely and exposes percentage semantics", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("accessible-beauty-ai:guide-opacity", "broken"),
+  );
+  await page.goto("/#/eyeliner");
+  await page.getByText("显示设置", { exact: true }).click();
+  const slider = page.getByLabel("引导线透明度");
+  await expect(slider).toHaveValue("65");
+  await expect(slider).toHaveAttribute("aria-valuemin", "20");
+  await expect(slider).toHaveAttribute("aria-valuemax", "100");
+  await expect(slider).toHaveAttribute("aria-valuenow", "65");
+  await expect(page.locator("output")).toHaveText("65%");
+  await slider.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuenow", "75");
+});
+
+test("guide opacity updates immediately, persists, and does not restart vision", async ({
+  page,
+}) => {
+  await installCamera(page);
+  await begin(page);
+  await page.getByText("显示设置", { exact: true }).click();
+  const slider = page.getByLabel("引导线透明度");
+  const before = await page.evaluate(() => {
+    const state = (
+      window as unknown as {
+        __cameraTest: { streams: MediaStream[]; detectors: number };
+      }
+    ).__cameraTest;
+    return { streams: state.streams.length, detectors: state.detectors };
+  });
+
+  await slider.fill("20");
+  await expect(slider).toHaveAttribute("aria-valuenow", "20");
+  await expect(page.locator('canvas[data-opacity="0.2"]')).toHaveCount(2);
+  await slider.fill("100");
+  await expect(slider).toHaveAttribute("aria-valuenow", "100");
+  await expect(page.locator('canvas[data-opacity="1"]')).toHaveCount(2);
+  await page.getByRole("button", { name: "暂停", exact: true }).click();
+  await slider.fill("40");
+  await expect(page.locator('canvas[data-opacity="0.4"]')).toHaveCount(2);
+  await page.getByRole("button", { name: "继续练习", exact: true }).click();
+  await slider.fill("70");
+  await page.getByRole("button", { name: "恢复默认" }).click();
+  await expect(slider).toHaveValue("65");
+  await slider.fill("80");
+
+  expect(
+    await page.evaluate(() => {
+      const state = (
+        window as unknown as {
+          __cameraTest: { streams: MediaStream[]; detectors: number };
+        }
+      ).__cameraTest;
+      return { streams: state.streams.length, detectors: state.detectors };
+    }),
+  ).toEqual(before);
+
+  await page.reload();
+  await page.getByText("显示设置", { exact: true }).click();
+  await expect(page.getByLabel("引导线透明度")).toHaveValue("80");
 });
 
 test("320px, 200% zoom approximation and reduced motion keep core controls usable", async ({

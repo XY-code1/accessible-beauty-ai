@@ -167,9 +167,9 @@ test("raw keyframe does not contain the guide, including mirror and resize", asy
     "preview",
   );
   await saveRaw();
-  await page.getByText("参考线显示设置", { exact: true }).click();
+  await page.getByText("显示设置", { exact: true }).click();
   await page.getByLabel("高对比度参考线").check();
-  await page.getByLabel("参考线不透明度").fill("0.5");
+  await page.getByLabel("引导线透明度").fill("50");
   await saveRaw();
   await page.getByRole("button", { name: "隐藏参考线" }).click();
   await page.getByRole("button", { name: "镜像已开" }).click();

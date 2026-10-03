@@ -9,6 +9,11 @@ import { PracticeView } from "./eyeliner/PracticeView";
 import { PreparationView } from "./eyeliner/PreparationView";
 import { useCameraCapture } from "./eyeliner/useCameraCapture";
 import { useSpeechGuidance } from "./eyeliner/useSpeechGuidance";
+import {
+  DEFAULT_GUIDE_OPACITY,
+  loadGuideOpacity,
+  saveGuideOpacity,
+} from "./eyeliner/guideOpacity";
 export { EyeIcon } from "./eyeliner/EyeIcon";
 const steps = ["确认路径", "画眼尾", "连接外段", "完成练习"];
 const stepIndex = { setup: 0, wing: 1, connect: 2, done: 3 };
@@ -23,7 +28,7 @@ export default function EyelinerPractice({
   const [showGuide, setShowGuide] = useState(true);
   const [mirror, setMirror] = useState(true);
   const [highContrast, setHighContrast] = useState(false);
-  const [opacity, setOpacity] = useState(0.85);
+  const [opacity, setOpacity] = useState(loadGuideOpacity);
   const [guideMode, setGuideMode] = useState<GuideMode>("guide");
   const [review, setReview] = useState(false);
   const [showWhole, setShowWhole] = useState(false);
@@ -105,6 +110,25 @@ export default function EyelinerPractice({
               ? "请正视镜头，让脸进入画面"
               : "摄像头尚未开启";
   const speech = useSpeechGuidance({ active, visible, error, session });
+  const opacityPercent = Math.round(opacity * 100);
+
+  function updateGuideOpacity(value: number) {
+    setOpacity(value);
+    saveGuideOpacity(value);
+  }
+
+  function handleOpacityKey(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (
+      !["ArrowLeft", "ArrowDown", "ArrowRight", "ArrowUp"].includes(event.key)
+    )
+      return;
+    event.preventDefault();
+    const direction =
+      event.key === "ArrowLeft" || event.key === "ArrowDown" ? -10 : 10;
+    updateGuideOpacity(
+      Math.min(1, Math.max(0.2, (opacityPercent + direction) / 100)),
+    );
+  }
 
   return (
     <div
@@ -425,7 +449,7 @@ export default function EyelinerPractice({
             )}
             {session.step !== "done" && (
               <details className="display-settings">
-                <summary>参考线显示设置</summary>
+                <summary>显示设置</summary>
                 <label>
                   <input
                     type="checkbox"
@@ -434,17 +458,35 @@ export default function EyelinerPractice({
                   />
                   高对比度参考线
                 </label>
-                <label>
-                  参考线不透明度
+                <div className="opacity-setting">
+                  <label htmlFor="guide-opacity">引导线透明度</label>
+                  <output htmlFor="guide-opacity">{opacityPercent}%</output>
                   <input
+                    id="guide-opacity"
                     type="range"
-                    min="0.3"
-                    max="1"
-                    step="0.05"
-                    value={opacity}
-                    onChange={(e) => setOpacity(Number(e.target.value))}
+                    min="20"
+                    max="100"
+                    step="5"
+                    value={opacityPercent}
+                    aria-valuemin={20}
+                    aria-valuemax={100}
+                    aria-valuenow={opacityPercent}
+                    aria-valuetext={`${opacityPercent}%`}
+                    onChange={(e) =>
+                      updateGuideOpacity(
+                        Math.round(Number(e.target.value) / 10) / 10,
+                      )
+                    }
+                    onKeyDown={handleOpacityKey}
                   />
-                </label>
+                  <button
+                    type="button"
+                    className="opacity-reset"
+                    onClick={() => updateGuideOpacity(DEFAULT_GUIDE_OPACITY)}
+                  >
+                    恢复默认
+                  </button>
+                </div>
               </details>
             )}
             {error && (
