@@ -14,6 +14,7 @@ export async function installCamera(
         mark: "none",
         draws: 0,
         captures: 0,
+        detectors: 0,
         streams: [] as MediaStream[],
       };
       Object.assign(window, { __cameraTest: state });
@@ -101,6 +102,7 @@ export async function installCamera(
     export function preloadDetector() { void createDetector().catch(() => {}); }
     export function discardDetector() {}
     export async function createDetector() {
+      window.__cameraTest.detectors++;
       ${options.modelFailure ? "throw new Error('test model failure');" : ""}
       return { close() {}, detectForVideo(source) {
         if (source instanceof HTMLCanvasElement) window.__cameraTest.captures++;
