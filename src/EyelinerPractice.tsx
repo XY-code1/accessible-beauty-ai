@@ -132,6 +132,7 @@ export default function EyelinerPractice({
 
   return (
     <div
+      data-testid="eyeliner-practice"
       className={`app-shell eye-shell ${inPractice ? "focus-practice" : ""} ${session.step === "done" ? "finished-practice" : ""}`}
     >
       <header className="header" inert={!!intent}>

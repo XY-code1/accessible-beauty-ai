@@ -52,7 +52,7 @@ async function main() {
     });
 
     await page.goto(base.href, { waitUntil: "networkidle" });
-    await page.getByRole("heading", { name: "今天，从哪一步开始？" }).waitFor();
+    await page.getByTestId("workspace-home").waitFor();
     assert(
       await page.evaluate(
         () =>
@@ -66,7 +66,7 @@ async function main() {
       waitUntil: "networkidle",
     });
     await page.reload({ waitUntil: "networkidle" });
-    await page.getByRole("heading", { name: "从一条眼线，开始。" }).waitFor();
+    await page.getByTestId("eyeliner-practice").waitFor();
     await page.getByRole("button", { name: "开启摄像头" }).click();
     await page.getByRole("button", { name: "关闭摄像头" }).waitFor({
       timeout: 30_000,

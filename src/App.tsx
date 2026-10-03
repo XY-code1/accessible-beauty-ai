@@ -41,7 +41,7 @@ export default function App() {
   if (page === "eyeliner")
     return <EyelinerPractice onEngagementChange={onEngagementChange} />;
   return (
-    <div className="app-shell home-shell">
+    <div className="app-shell home-shell" data-testid="workspace-home">
       <header className="header">
         <a className="brand" href="#/" aria-label="无界美妆首页">
           <span className="brand-icon">
