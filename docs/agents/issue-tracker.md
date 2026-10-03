@@ -1,7 +1,7 @@
 # Issue tracker
 
-- Provider: GitHub, repository `linz12306/beauty-without-barriers` (private).
-- Read: `gh issue view NUMBER --repo linz12306/beauty-without-barriers`.
+- Provider: GitHub, repository `XY-code1/accessible-beauty-ai` (private).
+- Read: `gh issue view NUMBER --repo XY-code1/accessible-beauty-ai`.
 - v0.3 parent specification: #1 and `docs/spec-v0.3-makeup-workspace.md`.
 - Approved implementation tickets: #2–#6; `ready-for-agent` denotes executable scope.
 - Native blockers: #3, #5, #6 depend on #2; #4 is independent.

@@ -33,11 +33,11 @@ npm run dev
 
 ## 团队协作
 
-仓库：<https://github.com/linz12306/beauty-without-barriers>。私有仓库需要先由仓库所有者添加协作者。
+仓库：<https://github.com/XY-code1/accessible-beauty-ai>。私有仓库需要先由仓库所有者添加协作者。
 
 ```sh
-git clone https://github.com/linz12306/beauty-without-barriers.git
-cd beauty-without-barriers
+git clone https://github.com/XY-code1/accessible-beauty-ai.git
+cd accessible-beauty-ai
 npm ci
 npm run dev
 ```

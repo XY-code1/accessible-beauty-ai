@@ -1,6 +1,6 @@
 # HTTPS 演示与真机验收
 
-演示地址（待部署成功后可用）：<https://linz12306.github.io/beauty-without-barriers/>
+演示地址（待部署成功后可用）：<https://xy-code1.github.io/accessible-beauty-ai/>
 
 GitHub Actions 在 `main` 更新后构建 Vite 静态站点并部署到 GitHub Pages。部署检查会验证 HTTPS 页面、首页与眼线 Hash 路由刷新、摄像头 API、Face Landmarker 模型、MediaPipe WASM 和 OpenCV.js 资源。站点不包含密钥、真人照片或 `samples/private/` 数据。
 
@@ -37,7 +37,7 @@ GitHub Actions 在 `main` 更新后构建 Vite 静态站点并部署到 GitHub P
 
 ## 每轮操作
 
-1. 首次打开首页，确认无白屏；刷新一次，再直接打开演示地址下的 `#/eyeliner`（保留 `/beauty-without-barriers/` 前缀）。
+1. 首次打开首页，确认无白屏；刷新一次，再直接打开演示地址下的 `#/eyeliner`（保留 `/accessible-beauty-ai/` 前缀）。
 2. 点击“开启摄像头”，选择允许，记录从点击到“眼部已定位”的时间。
 3. 先用“仅跟随指引练习”完成两步，确认基本流程正常；重新开始后再完成画前照片及两次检查，分别记录失败提示、卡顿和恢复方法。
 4. 分别测试“关闭摄像头”、完成练习和返回工作台，确认系统摄像头指示消失。
