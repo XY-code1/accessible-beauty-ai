@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import EyelinerPractice, { EyeIcon } from "./EyelinerPractice";
+import { publicFeedbackUrl } from "./feedback";
 
 function route() {
   return /^#\/eyeliner(?:\/|$)/.test(location.hash) ? "eyeliner" : "home";
@@ -7,6 +8,7 @@ function route() {
 
 export default function App() {
   const [page, setPage] = useState(route);
+  const feedbackUrl = publicFeedbackUrl(import.meta.env.VITE_FEEDBACK_URL);
   const engaged = useRef(false);
   const onEngagementChange = useCallback((active: boolean) => {
     engaged.current = active;
@@ -98,6 +100,29 @@ export default function App() {
             进入练习后，由你开启摄像头。本次照片只在会话内处理，结束或离开即清除。
           </p>
         </aside>
+        <section className="test-invite" aria-labelledby="test-invite-title">
+          <p className="eyebrow">公开测试说明</p>
+          <h2 id="test-invite-title">参与测试</h2>
+          <ul>
+            <li>当前是眼线功能测试版。</li>
+            <li>建议使用最新版 iOS Safari。</li>
+            <li>摄像头画面默认只在本机处理。</li>
+            <li>不会自动上传人脸图片、视频、音频或面部关键点。</li>
+            <li>测试结束后可以填写反馈。</li>
+          </ul>
+          {feedbackUrl ? (
+            <a
+              className="secondary test-feedback-link"
+              href={feedbackUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              填写测试反馈
+            </a>
+          ) : (
+            <p className="feedback-unavailable">反馈问卷配置后开放。</p>
+          )}
+        </section>
       </main>
       <footer>
         <span>BEAUTY, AT YOUR OWN PACE.</span>

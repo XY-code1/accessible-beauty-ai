@@ -31,6 +31,8 @@ npm run dev
 
 手机摄像头需要**受信任的 HTTPS**。局域网的普通 HTTP IP 地址通常只能查看页面；要用手机摄像头，请将 `npm run build` 生成的 `dist/` 放到 HTTPS 静态站点，或使用受信任的本地开发证书。电脑本机 `localhost` 可直接调试。部署工作流合入 main 后，main 更新会自动发布到 GitHub Pages；只有 Deploy mobile demo 的 build、deploy、verify 全部成功后，才进入手机验收。
 
+公开测试反馈链接通过仓库 Actions variable `VITE_FEEDBACK_URL` 配置，只接受公开 HTTPS 地址。未配置时页面会说明反馈问卷尚未开放；不要将密钥、私人问卷或管理员凭据写入该变量或前端代码。
+
 ## 团队协作
 
 仓库：<https://github.com/XY-code1/accessible-beauty-ai>。私有仓库需要先由仓库所有者添加协作者。

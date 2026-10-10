@@ -25,6 +25,7 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE_PATH: /accessible-beauty-ai/
+          VITE_FEEDBACK_URL: ${{ vars.VITE_FEEDBACK_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
