@@ -5,7 +5,7 @@ POST /api/ocr/ingredient
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import Optional
 from app.models import OcrIngredientRequest, OcrIngredientResponse
-from app.services.ocr_service import OcrService
+from app.services.ocr_service import ImageTooLargeError, OcrService
 from app.services.knowledge_base import IngredientStore
 import base64
 import binascii
@@ -92,19 +92,22 @@ async def recognize_ingredients(request: OcrIngredientRequest) -> OcrIngredientR
         service = get_ocr_service()
         
         # 处理图片
-        texts, matched, warnings = service.process_image(
+        result = service.process_image(
             image_base64=request.imageBase64,
             return_matches=request.returnMatches
         )
         
         return OcrIngredientResponse(
-            success=True,
-            recognizedTexts=texts,
-            matchedIngredients=matched,
-            warnings=warnings,
-            message=f"识别完成，发现 {len(matched)} 个成分"
+            success=result.success,
+            recognizedTexts=result.texts,
+            matchedIngredients=result.matched,
+            warnings=result.warnings,
+            message=(f"识别完成，发现 {len(result.matched)} 个成分" if result.success
+                     else "OCR_PROCESS_FAILED: OCR处理失败，请稍后重试")
         )
         
+    except ImageTooLargeError:
+        raise _error(413, "IMAGE_TOO_LARGE", "图片超过 1600 万像素限制")
     except HTTPException:
         raise
     except Exception:
@@ -138,25 +141,28 @@ async def recognize_ingredients_file(
         
         # 调用OCR服务
         service = get_ocr_service()
-        texts, matched, warnings = service.process_image(
+        result = service.process_image(
             image_base64=image_base64,
             return_matches=True
         )
         
         # 如果提供了肤质标签，检查警告
-        if skin_tags:
+        if skin_tags and result.success:
             tags = [t.strip() for t in skin_tags.split(",")]
-            ingredient_warnings = service.check_warnings(matched, tags)
-            warnings.extend(ingredient_warnings)
+            ingredient_warnings = service.check_warnings(result.matched, tags)
+            result.warnings.extend(ingredient_warnings)
         
         return OcrIngredientResponse(
-            success=True,
-            recognizedTexts=texts,
-            matchedIngredients=matched,
-            warnings=warnings,
-            message=f"识别完成，发现 {len(matched)} 个成分"
+            success=result.success,
+            recognizedTexts=result.texts,
+            matchedIngredients=result.matched,
+            warnings=result.warnings,
+            message=(f"识别完成，发现 {len(result.matched)} 个成分" if result.success
+                     else "OCR_UPLOAD_FAILED: 文件处理失败，请稍后重试")
         )
         
+    except ImageTooLargeError:
+        raise _error(413, "IMAGE_TOO_LARGE", "图片超过 1600 万像素限制")
     except HTTPException:
         raise
     except Exception:

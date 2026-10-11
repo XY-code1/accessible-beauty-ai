@@ -89,6 +89,7 @@ python -m pytest tests
 | `/api/ocr/ingredient/file` | POST | OCR文件上传 |
 
 OCR图片大小上限为10 MiB；JSON请求按Base64解码后的大小计算，文件上传按文件字节数计算，超限返回HTTP 413。
+图片另有1600万像素上限，两种接口均在解码像素及预处理前检查，超限返回HTTP 413。OCR不可用时返回HTTP 200，响应中 `success` 为 `false`，并保留 `OCR不可用` 警告。
 
 ## 自测指南
 

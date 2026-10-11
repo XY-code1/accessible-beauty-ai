@@ -1,13 +1,18 @@
 import asyncio
 import base64
 import io
+import sys
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from PIL import Image
 from fastapi import HTTPException, UploadFile
 from fastapi.testclient import TestClient
 
 from app.api import ocr
+from app.services import ocr_service as service_module
+from app.services.ocr_service import OcrResult, OcrService
 from main import app
 
 
@@ -20,7 +25,7 @@ def ocr_service(monkeypatch):
     """Provide a mocked OCR factory and service with a small image size limit."""
     monkeypatch.setattr(ocr, "MAX_IMAGE_SIZE", 16)
     service = Mock()
-    service.process_image.return_value = ([], [], [])
+    service.process_image.return_value = OcrResult([], [], [])
     factory = Mock(return_value=service)
     monkeypatch.setattr(ocr, "get_ocr_service", factory)
     return factory, service
@@ -38,6 +43,7 @@ def test_json_image_accepts_valid_png(ocr_service):
     )
 
     assert response.status_code == 200
+    assert response.json()["success"] is True
     factory.assert_called_once()
     service.process_image.assert_called_once_with(
         image_base64=encoded, return_matches=False
@@ -74,6 +80,7 @@ def test_uploaded_image_accepts_valid_png(ocr_service):
     )
 
     assert response.status_code == 200
+    assert response.json()["success"] is True
     factory.assert_called_once()
     service.process_image.assert_called_once_with(
         image_base64=base64.b64encode(contents).decode("ascii"),
@@ -144,3 +151,75 @@ def test_ocr_runtime_error_is_sanitized(ocr_service, file_upload):
     assert body["success"] is False
     assert "secret internal path" not in body["message"]
     assert body["message"].startswith("OCR_")
+
+
+def post_image(contents, file_upload, image_format="PNG", return_matches=True):
+    if file_upload:
+        return client.post(
+            "/api/ocr/ingredient/file",
+            files={"file": ("image", contents, f"image/{image_format.lower()}")},
+            data={"skin_tags": "sensitive"},
+        )
+    return client.post(
+        "/api/ocr/ingredient",
+        json={
+            "imageBase64": base64.b64encode(contents).decode("ascii"),
+            "returnMatches": return_matches,
+        },
+    )
+
+
+@pytest.mark.parametrize("file_upload", [False, True])
+@pytest.mark.parametrize("image_format", ["PNG", "JPEG", "WEBP"])
+def test_routes_reject_excess_pixels_before_decoding(monkeypatch, file_upload, image_format):
+    monkeypatch.setattr(service_module, "MAX_IMAGE_PIXELS", 4)
+    service = OcrService([])
+    decoder = Mock()
+    preprocessor = Mock()
+    monkeypatch.setattr(service, "_decode_image", decoder)
+    monkeypatch.setattr(service, "_preprocess_image", preprocessor)
+    monkeypatch.setattr(ocr, "get_ocr_service", lambda: service)
+    output = io.BytesIO()
+    Image.new("RGB", (3, 2)).save(output, format=image_format)
+
+    response = post_image(output.getvalue(), file_upload, image_format)
+
+    assert response.status_code == 413
+    assert response.json()["detail"]["code"] == "IMAGE_TOO_LARGE"
+    decoder.assert_not_called()
+    preprocessor.assert_not_called()
+
+
+@pytest.mark.parametrize("file_upload, return_matches", [(False, True), (False, False), (True, True)])
+@pytest.mark.parametrize("failure", ["import", "initialization", "recognition"])
+def test_routes_report_ocr_unavailable_as_failure(monkeypatch, file_upload, return_matches, failure):
+    service = OcrService([])
+    monkeypatch.setattr(service, "_decode_image", lambda data: object())
+    monkeypatch.setattr(service, "_preprocess_image", lambda image: image)
+    warning_checker = Mock()
+    monkeypatch.setattr(service, "check_warnings", warning_checker)
+    monkeypatch.setattr(ocr, "get_ocr_service", lambda: service)
+    engine = Mock()
+    constructor = Mock(return_value=engine)
+    if failure == "import":
+        monkeypatch.setitem(sys.modules, "paddleocr", None)
+    else:
+        monkeypatch.setitem(sys.modules, "paddleocr", SimpleNamespace(PaddleOCR=constructor))
+        if failure == "initialization":
+            constructor.side_effect = RuntimeError("secret initialization details")
+        else:
+            engine.ocr.side_effect = RuntimeError("secret recognition details")
+    output = io.BytesIO()
+    Image.new("RGB", (1, 1)).save(output, format="PNG")
+
+    response = post_image(output.getvalue(), file_upload, return_matches=return_matches)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is False
+    assert body["recognizedTexts"] == []
+    assert body["matchedIngredients"] == []
+    assert body["warnings"] == ["OCR不可用"]
+    assert body["message"].startswith("OCR_")
+    assert "secret" not in str(body)
+    warning_checker.assert_not_called()

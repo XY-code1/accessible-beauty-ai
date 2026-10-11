@@ -3,12 +3,29 @@
 图片预处理 -> 文字识别 -> 成分匹配流水线
 """
 import base64
+from dataclasses import dataclass
+from io import BytesIO
 import logging
+import warnings as python_warnings
 from typing import List, Tuple
+from PIL import Image
 from app.models import Ingredient
 
 
 logger = logging.getLogger(__name__)
+MAX_IMAGE_PIXELS = 16_000_000
+
+
+class ImageTooLargeError(ValueError):
+    """图片像素数量超过限制。"""
+
+
+@dataclass
+class OcrResult:
+    texts: List[str]
+    matched: List[Ingredient]
+    warnings: List[str]
+    success: bool = True
 
 
 class OcrUnavailableError(RuntimeError):
@@ -59,7 +76,7 @@ class OcrService:
         self, 
         image_base64: str, 
         return_matches: bool = True
-    ) -> Tuple[List[str], List[Ingredient], List[str]]:
+    ) -> OcrResult:
         """
         处理图片并识别成分
         
@@ -68,7 +85,7 @@ class OcrService:
             return_matches: 是否返回匹配结果
         
         Returns:
-            (识别的文字列表, 匹配到的成分, 警告信息)
+            识别结果，包含文字、成分、警告信息和成功状态
         """
         recognized_texts = []
         matched_ingredients = []
@@ -77,10 +94,19 @@ class OcrService:
         try:
             # 解码图片
             image_data = base64.b64decode(image_base64)
+            # 只读取图片头中的尺寸，超限时不解码像素。
+            try:
+                with python_warnings.catch_warnings():
+                    python_warnings.simplefilter("error", Image.DecompressionBombWarning)
+                    with Image.open(BytesIO(image_data), formats=("PNG", "JPEG", "WEBP")) as metadata:
+                        if metadata.width * metadata.height > MAX_IMAGE_PIXELS:
+                            raise ImageTooLargeError("图片超过 1600 万像素限制")
+            except (Image.DecompressionBombWarning, Image.DecompressionBombError) as exc:
+                raise ImageTooLargeError("图片超过 1600 万像素限制") from exc
             image = self._decode_image(image_data)
             
             if image is None:
-                return [], [], ["图片解码失败"]
+                return OcrResult([], [], ["图片解码失败"], success=False)
             
             # 图片预处理
             preprocessed = self._preprocess_image(image)
@@ -92,13 +118,15 @@ class OcrService:
             if return_matches:
                 matched_ingredients, warnings = self._match_ingredients(recognized_texts)
             
+        except ImageTooLargeError:
+            raise
         except OcrUnavailableError:
-            return [], [], ["OCR不可用"]
+            return OcrResult([], [], ["OCR不可用"], success=False)
         except Exception:
             logger.exception("Image processing failed")
-            return [], [], ["IMAGE_PROCESS_FAILED: 图片处理失败，请稍后重试"]
+            return OcrResult([], [], ["IMAGE_PROCESS_FAILED: 图片处理失败，请稍后重试"], success=False)
         
-        return recognized_texts, matched_ingredients, warnings
+        return OcrResult(recognized_texts, matched_ingredients, warnings)
     
     def _decode_image(self, image_data: bytes):
         """解码图片数据"""
