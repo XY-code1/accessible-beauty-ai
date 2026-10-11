@@ -9,6 +9,10 @@ from typing import List, Tuple, Optional
 from app.models import Ingredient
 
 
+class OcrUnavailableError(RuntimeError):
+    """OCR依赖或识别过程不可用。"""
+
+
 class OcrService:
     """OCR成分识别服务"""
     
@@ -85,6 +89,8 @@ class OcrService:
             if return_matches:
                 matched_ingredients, warnings = self._match_ingredients(recognized_texts)
             
+        except OcrUnavailableError:
+            return [], [], ["OCR不可用"]
         except Exception as e:
             return [], [], [f"图片处理错误: {str(e)}"]
         
@@ -173,54 +179,10 @@ class OcrService:
                         if text and len(text.strip()) > 0:
                             texts.append(text.strip())
                             
-        except ImportError:
-            # PaddleOCR不可用，尝试PaddlePaddle
-            try:
-                import paddle
-                # 降级处理
-                texts = self._fallback_text_extraction(preprocessed_image)
-            except ImportError:
-                # 完全不可用，返回空
-                pass
-        except Exception:
-            # 其他错误，降级处理
-            texts = self._fallback_text_extraction(preprocessed_image)
+        except Exception as e:
+            raise OcrUnavailableError("OCR不可用") from e
         
         return texts
-    
-    def _fallback_text_extraction(self, image) -> List[str]:
-        """降级文字提取 - 基于正则匹配已知的成分名称"""
-        matched = []
-        
-        if image is None:
-            return matched
-        
-        try:
-            import cv2
-            import numpy as np
-            
-            # 尝试用简单的二值化和轮廓检测找文字区域
-            if len(image.shape) == 3:
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            else:
-                gray = image
-            
-            # 简单阈值
-            _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
-            
-            # 提取所有成分名称作为候选
-            for ing in self.ingredients:
-                # 中文名匹配
-                if ing["nameZh"] in str(image):
-                    matched.append(ing["nameZh"])
-                # 英文名匹配
-                if ing["name"] in str(image):
-                    matched.append(ing["name"])
-                    
-        except Exception:
-            pass
-        
-        return list(set(matched))
     
     def _match_ingredients(self, texts: List[str]) -> Tuple[List[Ingredient], List[str]]:
         """
