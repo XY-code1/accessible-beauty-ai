@@ -68,6 +68,13 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 - API文档: http://localhost:8000/docs
 - ReDoc文档: http://localhost:8000/redoc
 
+### 5. 运行后端契约测试
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests
+```
+
 ## 接口列表
 
 | 接口 | 方法 | 描述 |

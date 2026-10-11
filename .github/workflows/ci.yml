@@ -16,7 +16,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: npm ci
+      - run: pip install -r requirements-dev.txt
+        working-directory: backend
+      - run: python -m pytest tests
+        working-directory: backend
       - run: npx playwright install --with-deps chromium
       - run: npm run test
       - run: npm run test:e2e

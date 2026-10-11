@@ -50,7 +50,7 @@ async def health_check() -> HealthResponse:
     """健康检查接口"""
     return HealthResponse(
         status="healthy",
-        version="1.0.0",
+        version=app.version,
         timestamp=time.time()
     )
 
