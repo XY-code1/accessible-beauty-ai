@@ -12,6 +12,7 @@ BASE = "http://127.0.0.1:8002"
 
 
 def post_json(path, payload, allow_error=False):
+    """提交 JSON 并返回状态码和响应文本；allow_error 为真时也返回 HTTP 错误响应。"""
     req = urllib.request.Request(
         f"{BASE}{path}",
         data=json.dumps(payload).encode("utf-8"),
@@ -28,6 +29,7 @@ def post_json(path, payload, allow_error=False):
 
 
 def post_multipart(path, file_path, fields=None):
+    """上传 PNG 文件及可选表单字段，返回状态码和响应文本。"""
     boundary = "----test"
     parts = []
     if fields:
@@ -69,6 +71,7 @@ def write_test_png(path):
     idat = zlib.compress(raw)
 
     def chunk(typ, data):
+        """将类型和数据编码为包含长度与 CRC 校验值的 PNG 数据块。"""
         return (
             struct.pack(">I", len(data))
             + typ
@@ -83,6 +86,7 @@ def write_test_png(path):
 
 
 def main():
+    """生成测试图片，依次请求 JSON、文件上传和非图片输入接口并打印响应。"""
     # 1) JSON 接口
     png_path = write_test_png("/tmp/test_ocr.png")
     with open(png_path, "rb") as f:
