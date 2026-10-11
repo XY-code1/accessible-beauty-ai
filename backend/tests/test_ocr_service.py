@@ -45,9 +45,14 @@ def test_ocr_failure_returns_unavailable_warning(service, monkeypatch, failure, 
         else:
             engine.ocr.side_effect = RuntimeError("recognition failed")
 
-    assert service.process_image(encoded_image(), return_matches) == OcrResult(
-        [], [], ["OCR不可用"], success=False
-    )
+    result = service.process_image(encoded_image(), return_matches)
+
+    assert result.success is False
+    assert result.unavailable is True
+    assert result.texts == []
+    assert result.matched == []
+    assert result.warnings == ["OCR不可用"]
+    assert result.message.startswith("OCR_FEATURE_UNAVAILABLE:")
 
 
 @pytest.mark.parametrize("result, texts", [(None, []), ([[]], []), ([[[None, ("成分", 0.99)]]], ["成分"])])
@@ -134,6 +139,34 @@ def test_unexpected_processing_error_is_sanitized(service, monkeypatch):
     assert result.success is False
     assert result.warnings == ["IMAGE_PROCESS_FAILED: 图片处理失败，请稍后重试"]
     assert "secret path" not in result.warnings[0]
+
+
+@pytest.mark.parametrize(
+    "content_bounds, crop_bounds",
+    [((8, 12, 10, 15), (6, 14, 8, 17)), ((0, 3, 0, 4), (0, 5, 0, 6))],
+)
+def test_trim_white_borders_crops_dark_content_with_padding(service, content_bounds, crop_bounds):
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("cv2")
+    image = np.full((20, 30), 255, dtype=np.uint8)
+    y0, y1, x0, x1 = content_bounds
+    image[y0:y1, x0:x1] = 0
+    cy0, cy1, cx0, cx1 = crop_bounds
+
+    trimmed = service._trim_white_borders(image)
+
+    np.testing.assert_array_equal(trimmed, image[cy0:cy1, cx0:cx1])
+
+
+def test_trim_white_borders_preserves_blank_and_empty_images(service):
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("cv2")
+    blank = np.full((20, 30), 255, dtype=np.uint8)
+    empty = np.empty((0, 0), dtype=np.uint8)
+
+    assert service._trim_white_borders(blank) is blank
+    assert service._trim_white_borders(empty) is empty
+    assert service._trim_white_borders(None) is None
 
 
 @pytest.mark.parametrize("image_format", ["PNG", "JPEG", "WEBP"])

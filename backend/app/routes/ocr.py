@@ -123,6 +123,7 @@ async def recognize_ingredients(request: OcrIngredientRequest) -> OcrIngredientR
             service.process_image,
             image_base64=request.imageBase64,
             return_matches=request.returnMatches,
+            skin_tags=request.skinTags or None,
         )
 
         return OcrIngredientResponse(

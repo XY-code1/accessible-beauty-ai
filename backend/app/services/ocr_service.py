@@ -248,7 +248,7 @@ class OcrService:
             return image
 
     def _trim_white_borders(self, image) -> any:
-        """裁掉图片四周的大面积白边/黑边，提升 OCR 召回"""
+        """裁掉图片四周的大面积白边，提升 OCR 召回"""
         try:
             import cv2
             import numpy as np
@@ -256,8 +256,8 @@ class OcrService:
             if image is None or image.size == 0:
                 return image
 
-            # 找非白/非黑区域的边界
-            mask = (image < 250) & (image > 5)
+            # 找二值化图片中深色内容的边界
+            mask = image < 128
             if not np.any(mask):
                 return image
             coords = cv2.findNonZero(mask.astype(np.uint8) * 255)
@@ -282,10 +282,7 @@ class OcrService:
         if preprocessed_image is None:
             return []
 
-        try:
-            engine = self._get_ocr_engine()
-        except OcrUnavailableError:
-            return []
+        engine = self._get_ocr_engine()
 
         try:
             with self._ocr_inference_lock:
