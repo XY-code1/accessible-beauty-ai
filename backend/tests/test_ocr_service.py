@@ -1,6 +1,8 @@
 import base64
 import io
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -73,6 +75,26 @@ def test_paddleocr_is_lazily_loaded_once_and_reused(service, monkeypatch):
         lang="ch", use_angle_cls=True, show_log=False
     )
     assert engine.ocr.call_count == 2
+
+
+def test_concurrent_engine_access_initializes_paddleocr_once(service, monkeypatch):
+    """Verify concurrent requests share one lazily initialized OCR engine."""
+    engine = Mock()
+
+    def create_engine(**kwargs):
+        time.sleep(0.05)
+        return engine
+
+    constructor = Mock(side_effect=create_engine)
+    monkeypatch.setitem(
+        sys.modules, "paddleocr", SimpleNamespace(PaddleOCR=constructor)
+    )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        engines = list(executor.map(lambda _: service._get_ocr_engine(), range(2)))
+
+    assert engines == [engine, engine]
+    constructor.assert_called_once()
 
 
 def test_unexpected_processing_error_is_sanitized(service, monkeypatch):

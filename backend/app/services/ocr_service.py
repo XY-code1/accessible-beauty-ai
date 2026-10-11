@@ -6,6 +6,7 @@ import base64
 from dataclasses import dataclass
 from io import BytesIO
 import logging
+import threading
 import warnings as python_warnings
 from typing import List, Tuple
 from PIL import Image, UnidentifiedImageError
@@ -45,6 +46,7 @@ class OcrService:
         self.ingredients = ingredients_data
         self._ingredient_names = self._build_name_index()
         self._ocr_engine = None
+        self._ocr_engine_lock = threading.Lock()
         
         # OCR库可用性检查
         self._ocr_available = self._check_ocr_availability()
@@ -212,16 +214,18 @@ class OcrService:
     def _get_ocr_engine(self):
         """Lazily create and reuse one PaddleOCR engine per service process."""
         if self._ocr_engine is None:
-            try:
-                from paddleocr import PaddleOCR
+            with self._ocr_engine_lock:
+                if self._ocr_engine is None:
+                    try:
+                        from paddleocr import PaddleOCR
 
-                self._ocr_engine = PaddleOCR(
-                    lang="ch",
-                    use_angle_cls=True,
-                    show_log=False,
-                )
-            except Exception as exc:
-                raise OcrUnavailableError("OCR不可用") from exc
+                        self._ocr_engine = PaddleOCR(
+                            lang="ch",
+                            use_angle_cls=True,
+                            show_log=False,
+                        )
+                    except Exception as exc:
+                        raise OcrUnavailableError("OCR不可用") from exc
         return self._ocr_engine
     
     def _match_ingredients(self, texts: List[str]) -> Tuple[List[Ingredient], List[str]]:
