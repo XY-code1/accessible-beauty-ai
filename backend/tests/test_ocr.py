@@ -17,6 +17,7 @@ PNG_HEADER = b"\x89PNG\r\n\x1a\n"
 
 @pytest.fixture
 def ocr_service(monkeypatch):
+    """Provide a mocked OCR factory and service with a small image size limit."""
     monkeypatch.setattr(ocr, "MAX_IMAGE_SIZE", 16)
     service = Mock()
     service.process_image.return_value = ([], [], [])
@@ -26,6 +27,7 @@ def ocr_service(monkeypatch):
 
 
 def test_json_image_accepts_valid_png(ocr_service):
+    """Verify PNG data at the size limit reaches OCR with the requested match flag."""
     factory, service = ocr_service
     contents = PNG_HEADER + b"x" * 8
     encoded = base64.b64encode(contents).decode("ascii")
@@ -51,6 +53,7 @@ def test_json_image_accepts_valid_png(ocr_service):
     ],
 )
 def test_json_image_rejects_invalid_input(ocr_service, payload, status, code):
+    """Verify invalid JSON image data is rejected before OCR initialization."""
     factory, _ = ocr_service
 
     response = client.post("/api/ocr/ingredient", json={"imageBase64": payload})
@@ -61,6 +64,7 @@ def test_json_image_rejects_invalid_input(ocr_service, payload, status, code):
 
 
 def test_uploaded_image_accepts_valid_png(ocr_service):
+    """Verify a PNG upload at the size limit is encoded and passed to OCR."""
     factory, service = ocr_service
     contents = PNG_HEADER + b"x" * 8
 
@@ -88,6 +92,7 @@ def test_uploaded_image_accepts_valid_png(ocr_service):
 def test_uploaded_image_rejects_invalid_input(
     ocr_service, contents, content_type, status, code
 ):
+    """Verify invalid uploads return stable errors before OCR initialization."""
     factory, _ = ocr_service
 
     response = client.post(
@@ -101,6 +106,7 @@ def test_uploaded_image_rejects_invalid_input(
 
 
 def test_uploaded_image_read_is_bounded(ocr_service):
+    """Verify oversized uploads read only one byte beyond the configured limit."""
     upload = UploadFile(
         file=io.BytesIO(PNG_HEADER + b"x" * 20),
         headers={"content-type": "image/png"},
@@ -117,6 +123,7 @@ def test_uploaded_image_read_is_bounded(ocr_service):
 
 @pytest.mark.parametrize("file_upload", [False, True])
 def test_ocr_runtime_error_is_sanitized(ocr_service, file_upload):
+    """Verify both OCR endpoints hide internal service errors in public responses."""
     _, service = ocr_service
     service.process_image.side_effect = RuntimeError("secret internal path")
     contents = PNG_HEADER + b"x"

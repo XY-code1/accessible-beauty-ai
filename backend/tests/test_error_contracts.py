@@ -11,6 +11,7 @@ client = TestClient(app)
 
 
 def test_intent_failure_uses_stable_public_message(monkeypatch):
+    """Verify intent failures fall back without exposing internal exception details."""
     monkeypatch.setattr(
         intent._intent_engine,
         "parse",
@@ -27,6 +28,7 @@ def test_intent_failure_uses_stable_public_message(monkeypatch):
 
 
 def test_plan_failure_uses_stable_public_message(monkeypatch):
+    """Verify plan failures return a stable code without exposing exception details."""
     monkeypatch.setattr(
         plan,
         "get_plan_engine",
@@ -52,6 +54,7 @@ def test_plan_failure_uses_stable_public_message(monkeypatch):
 
 
 def test_global_error_handler_uses_stable_public_contract():
+    """Verify unhandled errors return the generic JSON contract with HTTP 500."""
     response = asyncio.run(
         global_exception_handler(None, RuntimeError("secret path"))
     )

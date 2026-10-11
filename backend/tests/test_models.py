@@ -12,6 +12,7 @@ CATALOG_PATH = Path(__file__).resolve().parents[1] / "data" / "ingredients.json"
 
 
 def test_catalog_loads_without_changing_values():
+    """Verify catalog validation preserves every stored ingredient value."""
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
     ingredients = IngredientStore(str(CATALOG_PATH)).get_all()
 
@@ -27,6 +28,7 @@ def test_catalog_loads_without_changing_values():
     ],
 )
 def test_ingredient_rejects_unknown_catalog_values(field, value, location):
+    """Verify unsupported catalog literals report the offending field or list item."""
     ingredient = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))[0]
     ingredient[field] = value
 
@@ -38,6 +40,7 @@ def test_ingredient_rejects_unknown_catalog_values(field, value, location):
 
 
 def test_plan_request_keeps_skin_type_open():
+    """Verify profiles accept skin types outside the ingredient caution vocabulary."""
     request = PlanRequest.model_validate(
         {
             "parameters": {

@@ -11,9 +11,11 @@ from main import app
 def test_plan_failure_hides_exception_details_and_logs_traceback(
     monkeypatch, caplog, failure_stage
 ):
+    """Verify plan failures hide internal details while logging the original exception."""
     error = RuntimeError("private internal details")
 
     def fail(*args, **kwargs):
+        """Raise the captured error to simulate a plan initialization or generation failure."""
         raise error
 
     if failure_stage == "initialization":

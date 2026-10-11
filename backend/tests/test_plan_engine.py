@@ -28,6 +28,7 @@ from app.services.plan_engine import (
 def test_omitted_steps_do_not_contribute_to_total_duration(
     scene, style, intensity, skin_type, omissions, total
 ):
+    """Verify pruning preserves step order and excludes omitted steps from duration."""
     engine = PlanEngine([])
     params = BeautyParameters(scene=scene, style=style, intensity=intensity)
     profile = BeautyProfile(skinType=skin_type, skinTags=[skin_type])
@@ -50,6 +51,7 @@ def test_omitted_steps_do_not_contribute_to_total_duration(
 
 
 def test_pruning_zeros_preexisting_nonessential_step_without_mutating_input():
+    """Verify pruning clears omitted duration on a copy and preserves its reason."""
     engine = PlanEngine([])
     params = BeautyParameters(scene="work", style="matte", intensity="medium")
     steps = engine._layer1_base_steps(params)
@@ -64,6 +66,7 @@ def test_pruning_zeros_preexisting_nonessential_step_without_mutating_input():
 
 
 def test_plan_rejects_more_than_the_supported_step_limit(monkeypatch):
+    """Verify generation rejects a plan that exceeds the supported step count."""
     engine = PlanEngine([])
     params = BeautyParameters(scene="work", style="matte", intensity="medium")
     base = engine._layer1_base_steps(params)
@@ -78,10 +81,12 @@ def test_plan_rejects_more_than_the_supported_step_limit(monkeypatch):
 
 
 def test_plan_rejects_overlong_step_duration(monkeypatch):
+    """Verify generation rejects a step exceeding the duration limit."""
     engine = PlanEngine([])
     params = BeautyParameters(scene="work", style="matte", intensity="medium")
 
     def make_overlong(steps, _profile):
+        """Copy the steps and make the first duration exceed the allowed limit."""
         result = [step.model_copy() for step in steps]
         result[0].duration = MAX_STEP_DURATION_SECONDS + 1
         return result

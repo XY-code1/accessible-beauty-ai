@@ -15,6 +15,7 @@ from app.services.plan_engine import IntentEngine
 def test_parse_selects_value_with_most_keyword_matches(
     monkeypatch, reverse_mapping, category, query, expected
 ):
+    """Verify the highest keyword score wins regardless of mapping order."""
     engine = IntentEngine()
     if reverse_mapping:
         attribute = f"{category.upper()}_KEYWORDS"
@@ -39,6 +40,7 @@ def test_parse_selects_value_with_most_keyword_matches(
 def test_parse_breaks_ties_by_value_and_counts_all_matches_for_confidence(
     monkeypatch, reverse_mapping, category, query, expected
 ):
+    """Verify ties use value order while confidence includes all keyword matches."""
     engine = IntentEngine()
     if reverse_mapping:
         attribute = f"{category.upper()}_KEYWORDS"
@@ -64,6 +66,7 @@ def test_parse_breaks_ties_by_value_and_counts_all_matches_for_confidence(
 def test_parse_preserves_defaults_confidence_and_keyword_presence_counting(
     query, expected, confidence
 ):
+    """Verify defaults and confidence count keyword presence rather than repetition."""
     params, actual_confidence = IntentEngine().parse(query)
 
     assert (params.scene, params.style, params.intensity) == expected
@@ -72,8 +75,10 @@ def test_parse_preserves_defaults_confidence_and_keyword_presence_counting(
 
 @pytest.mark.parametrize("query", ["", "hello"])
 def test_parse_returns_none_when_no_keywords_match(query):
+    """Verify unmatched queries return no parameters and zero confidence."""
     assert IntentEngine().parse(query) == (None, 0.0)
 
 
 def test_get_best_match_returns_none_for_empty_scores():
+    """Verify an empty score mapping has no best match."""
     assert IntentEngine()._get_best_match({}) is None

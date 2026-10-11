@@ -21,10 +21,12 @@ logger = logging.getLogger(__name__)
 
 
 def _error(status_code: int, code: str, message: str) -> HTTPException:
+    """构造包含稳定错误代码和公开消息的 HTTP 异常。"""
     return HTTPException(status_code=status_code, detail={"code": code, "message": message})
 
 
 def _detect_image_type(contents: bytes) -> Optional[str]:
+    """根据文件头识别 PNG、JPEG 或 WebP 类型；未知类型返回 None。"""
     if contents.startswith(b"\x89PNG\r\n\x1a\n"):
         return "image/png"
     if contents.startswith(b"\xff\xd8\xff"):
@@ -35,6 +37,7 @@ def _detect_image_type(contents: bytes) -> Optional[str]:
 
 
 def _validate_image(contents: bytes, declared_type: Optional[str] = None) -> str:
+    """返回文件头识别的类型；大小超限、类型不支持或声明不符时抛出 HTTP 异常。"""
     if len(contents) > MAX_IMAGE_SIZE:
         raise _error(413, "IMAGE_TOO_LARGE", "图片超过 10 MiB 大小限制")
 

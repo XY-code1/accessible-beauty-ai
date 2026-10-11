@@ -9,6 +9,7 @@ from app.services.ocr_service import OcrService
 
 @pytest.fixture
 def service(monkeypatch):
+    """Provide an OCR service with availability, decoding, and preprocessing stubbed."""
     monkeypatch.setattr(OcrService, "_check_ocr_availability", lambda self: True)
     service = OcrService([])
     monkeypatch.setattr(service, "_decode_image", lambda data: object())
@@ -19,6 +20,7 @@ def service(monkeypatch):
 @pytest.mark.parametrize("return_matches", [True, False])
 @pytest.mark.parametrize("failure", ["import", "initialization", "recognition"])
 def test_ocr_failure_returns_unavailable_warning(service, monkeypatch, failure, return_matches):
+    """Verify OCR import, initialization, and recognition failures degrade gracefully."""
     engine = Mock()
     constructor = Mock(return_value=engine)
     if failure == "import":
@@ -35,6 +37,7 @@ def test_ocr_failure_returns_unavailable_warning(service, monkeypatch, failure, 
 
 @pytest.mark.parametrize("result, texts", [(None, []), ([[]], []), ([[[None, ("成分", 0.99)]]], ["成分"])])
 def test_successful_ocr_preserves_results_without_unavailable_warning(service, monkeypatch, result, texts):
+    """Verify successful OCR, including empty results, produces no failure warning."""
     engine = Mock()
     engine.ocr.return_value = result
     monkeypatch.setitem(sys.modules, "paddleocr", SimpleNamespace(PaddleOCR=Mock(return_value=engine)))
@@ -43,6 +46,7 @@ def test_successful_ocr_preserves_results_without_unavailable_warning(service, m
 
 
 def test_paddleocr_is_lazily_loaded_once_and_reused(service, monkeypatch):
+    """Verify text extraction initializes PaddleOCR once and reuses the engine."""
     engine = Mock()
     engine.ocr.return_value = [[]]
     constructor = Mock(return_value=engine)
@@ -60,6 +64,7 @@ def test_paddleocr_is_lazily_loaded_once_and_reused(service, monkeypatch):
 
 
 def test_unexpected_processing_error_is_sanitized(service, monkeypatch):
+    """Verify unexpected processing failures return a warning without internal details."""
     monkeypatch.setattr(
         service, "_decode_image", Mock(side_effect=RuntimeError("secret path"))
     )

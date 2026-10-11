@@ -72,6 +72,7 @@ def check_data_files():
     return True
 
 def main():
+    """运行版本、依赖和数据文件检查，并打印结果及启动提示。"""
     print("=" * 50)
     print("无界美妆后端环境检查")
     print("=" * 50)
