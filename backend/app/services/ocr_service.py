@@ -275,7 +275,7 @@ class OcrService:
             for tag in skin_tags_lower:
                 if tag in caution_groups:
                     warnings.append(
-                        f"⚠️ {ing['nameZh']} 不适合 {tag} 肌肤使用，请注意"
+                        f"⚠️ {ing.nameZh} 不适合 {tag} 肌肤使用，请注意"
                     )
         
         return warnings
