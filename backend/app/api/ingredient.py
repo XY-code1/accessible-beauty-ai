@@ -89,9 +89,5 @@ async def get_ingredient(ingredient_id: str) -> Optional[Ingredient]:
     """
     根据ID获取单个成分详情
     """
-    try:
-        store = get_ingredient_store()
-        return store.get_by_id(ingredient_id)
-        
-    except Exception:
-        return None
+    store = get_ingredient_store()
+    return store.get_by_id(ingredient_id)
