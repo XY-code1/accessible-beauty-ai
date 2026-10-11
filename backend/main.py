@@ -7,7 +7,8 @@ from fastapi.responses import JSONResponse
 import logging
 import time
 
-from app.api import intent, plan, ingredient, ocr
+from app.api import intent, plan, ingredient
+from app.routes import ocr
 from app.models import HealthResponse
 
 

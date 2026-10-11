@@ -160,6 +160,7 @@ class OcrIngredientRequest(BaseModel):
     """OCR成分识别请求"""
     imageBase64: str = Field(..., description="Base64编码的图片数据")
     returnMatches: bool = Field(default=True, description="是否返回匹配结果")
+    skinTags: Optional[List[str]] = Field(default=None, description="用户肤质标签列表，用于生成警告")
 
 
 class OcrIngredientResponse(BaseModel):
@@ -169,6 +170,7 @@ class OcrIngredientResponse(BaseModel):
     matchedIngredients: List[Ingredient] = Field(default_factory=list, description="匹配到的成分")
     warnings: List[str] = Field(default_factory=list, description="警告信息(注意人群)")
     message: Optional[str] = Field(default=None, description="状态消息")
+    unavailable: bool = Field(default=False, description="OCR 功能是否不可用（依赖缺失等）")
 
 
 class HealthResponse(BaseModel):
