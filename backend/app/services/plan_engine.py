@@ -335,28 +335,20 @@ class IntentEngine:
             (美妆参数, 置信度)
         """
         query_lower = query.lower()
-        scores = {"scene": 0, "style": 0, "intensity": 0}
-        
-        # 匹配场景
-        for scene, keywords in self.SCENE_KEYWORDS.items():
-            for kw in keywords:
-                if kw in query_lower:
-                    scores["scene"] += 1
-        
-        # 匹配风格
-        for style, keywords in self.STYLE_KEYWORDS.items():
-            for kw in keywords:
-                if kw in query_lower:
-                    scores["style"] += 1
-        
-        # 匹配浓度
-        for intensity, keywords in self.INTENSITY_KEYWORDS.items():
-            for kw in keywords:
-                if kw in query_lower:
-                    scores["intensity"] += 1
+        scores = {
+            category: {
+                value: sum(kw in query_lower for kw in keywords)
+                for value, keywords in keywords_map.items()
+            }
+            for category, keywords_map in (
+                ("scene", self.SCENE_KEYWORDS),
+                ("style", self.STYLE_KEYWORDS),
+                ("intensity", self.INTENSITY_KEYWORDS),
+            )
+        }
         
         # 计算总匹配度
-        total_matches = sum(scores.values())
+        total_matches = sum(sum(value_scores.values()) for value_scores in scores.values())
         confidence = min(total_matches / 3.0, 1.0)  # 归一化
         
         # 如果匹配度太低，使用默认值
@@ -364,9 +356,9 @@ class IntentEngine:
             return None, confidence
         
         # 确定参数值
-        scene = self._get_best_match(scores["scene"], self.SCENE_KEYWORDS, query_lower)
-        style = self._get_best_match(scores["style"], self.STYLE_KEYWORDS, query_lower)
-        intensity = self._get_best_match(scores["intensity"], self.INTENSITY_KEYWORDS, query_lower)
+        scene = self._get_best_match(scores["scene"])
+        style = self._get_best_match(scores["style"])
+        intensity = self._get_best_match(scores["intensity"])
         
         params = BeautyParameters(
             scene=Scene(scene or "daily"),
@@ -378,17 +370,10 @@ class IntentEngine:
     
     def _get_best_match(
         self, 
-        score: float, 
-        keywords_map: Dict[str, List[str]],
-        query: str
+        scores: Dict[str, int]
     ) -> Optional[str]:
-        """获取最佳匹配项"""
-        if score == 0:
+        """选择得分最高的值；同分时按值的字典序升序选择。"""
+        if not scores or max(scores.values()) == 0:
             return None
-        
-        for key, keywords in keywords_map.items():
-            for kw in keywords:
-                if kw in query:
-                    return key
-        
-        return None
+
+        return min(scores, key=lambda value: (-scores[value], value))
