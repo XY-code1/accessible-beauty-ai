@@ -1,0 +1,182 @@
+[
+  {
+    "id": "ing_001",
+    "name": "Iron Oxides",
+    "nameZh": "氧化铁",
+    "category": "着色",
+    "description": "常见的眉妆着色剂，提供自然的棕黑色调，分为红、黄、黑氧化铁",
+    "benefits": ["持久显色", "自然遮盖", "安全稳定"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_002",
+    "name": "Kaolin",
+    "nameZh": "高岭土",
+    "category": "着色",
+    "description": "天然硅酸铝矿物质，吸油控油，适合油性肌肤",
+    "benefits": ["控油", "哑光效果", "吸汗"],
+    "cautionGroups": ["dry"]
+  },
+  {
+    "id": "ing_003",
+    "name": "Talc",
+    "nameZh": "滑石粉",
+    "category": "着色",
+    "description": "柔软的天然矿物，填充纹理，使眉粉顺滑好晕染",
+    "benefits": ["顺滑质地", "易于延展", "定妆"],
+    "cautionGroups": ["sensitive"]
+  },
+  {
+    "id": "ing_004",
+    "name": "Carnauba Wax",
+    "nameZh": "巴西棕榈蜡",
+    "category": "定型",
+    "description": "从棕榈叶提取的硬质植物蜡，持久定型不脱落",
+    "benefits": ["长效定型", "防水", "光泽"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_005",
+    "name": "Beeswax",
+    "nameZh": "蜂蜡",
+    "category": "定型",
+    "description": "蜜蜂分泌的天然蜡质，柔润易涂抹，温和不刺激",
+    "benefits": ["柔润配方", "温和定型", "滋养"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_006",
+    "name": "Candelilla Wax",
+    "nameZh": "小烛树蜡",
+    "category": "定型",
+    "description": "从大戟科植物提取的植物蜡，vegan友好替代品",
+    "benefits": ["纯植物成分", "柔润", "环保"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_007",
+    "name": "Tocopherol (Vitamin E)",
+    "nameZh": "生育酚(维生素E)",
+    "category": "养护",
+    "description": "强效抗氧化剂，保护眉毛毛囊，延缓衰老",
+    "benefits": ["抗氧化", "滋养毛囊", "保湿"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_008",
+    "name": "Castor Oil",
+    "nameZh": "蓖麻油",
+    "category": "养护",
+    "description": "富含脂肪酸的植物油，深层滋养眉毛促进生长",
+    "benefits": ["促进生长", "深层滋养", "柔顺"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_009",
+    "name": "Jojoba Oil",
+    "nameZh": "荷荷巴油",
+    "category": "养护",
+    "description": "结构接近人体皮脂的植物油，保湿不堵塞毛孔",
+    "benefits": ["水油平衡", "不致痘", "持久保湿"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_010",
+    "name": "Retinol",
+    "nameZh": "视黄醇",
+    "category": "养护",
+    "description": "维生素A衍生物，促进毛发生长但有刺激性",
+    "benefits": ["促进生长", "抗老", "细胞更新"],
+    "cautionGroups": ["sensitive", "acne", "retinol"]
+  },
+  {
+    "id": "ing_011",
+    "name": "Silica",
+    "nameZh": "二氧化硅",
+    "category": "着色",
+    "description": "控油球形粉末，吸收多余油脂保持干爽",
+    "benefits": ["控油哑光", "填充细纹", "柔焦"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_012",
+    "name": "Mica",
+    "nameZh": "云母",
+    "category": "着色",
+    "description": "天然硅酸盐矿物，增添光泽与珠光效果",
+    "benefits": ["自然光泽", "提亮", "多彩效果"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_013",
+    "name": "Niacinamide",
+    "nameZh": "烟酰胺",
+    "category": "养护",
+    "description": "维生素B3衍生物，控油美白修护肌肤屏障",
+    "benefits": ["控油", "美白提亮", "收毛孔"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_014",
+    "name": "Salicylic Acid",
+    "nameZh": "水杨酸",
+    "category": "养护",
+    "description": "脂溶性酸类成分，疏通毛孔适合油痘肌",
+    "benefits": ["疏通毛孔", "控油", "去角质"],
+    "cautionGroups": ["sensitive", "dry", "retinol"]
+  },
+  {
+    "id": "ing_015",
+    "name": "Biotin",
+    "nameZh": "生物素",
+    "category": "养护",
+    "description": "维生素B7，眉毛头发健康必需营养素",
+    "benefits": ["强韧发丝", "促进生长", "防脱落"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_016",
+    "name": "Glycerin",
+    "nameZh": "甘油",
+    "category": "养护",
+    "description": "经典保湿剂，吸湿锁水保持肌肤水润",
+    "benefits": ["保湿", "锁水", "柔软"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_017",
+    "name": "Titanium Dioxide",
+    "nameZh": "二氧化钛",
+    "category": "着色",
+    "description": "物理防晒剂，白色颜料增加遮盖力",
+    "benefits": ["防晒", "增白", "遮盖"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_018",
+    "name": "Hyaluronic Acid",
+    "nameZh": "透明质酸",
+    "category": "养护",
+    "description": "强效保湿因子，锁住大量水分使肌肤饱满",
+    "benefits": ["深层保湿", "锁水", "丰盈"],
+    "cautionGroups": []
+  },
+  {
+    "id": "ing_019",
+    "name": "Phenoxyethanol",
+    "nameZh": "苯氧乙醇",
+    "category": "养护",
+    "description": "常用的温和防腐剂，替代传统paraben类",
+    "benefits": ["安全防腐", "温和", "稳定"],
+    "cautionGroups": ["sensitive"]
+  },
+  {
+    "id": "ing_020",
+    "name": "Arnica Extract",
+    "nameZh": "山金车提取物",
+    "category": "养护",
+    "description": "舒缓镇静的草本成分，减少眉部肌肤刺激",
+    "benefits": ["舒缓", "镇静", "减少红肿"],
+    "cautionGroups": ["sensitive"]
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "name": "accessible-beauty-backend",
+  "version": "1.0.0",
+  "description": "无界美妆后端服务 - 眉妆推荐闭环",
+  "main": "main.py",
+  "scripts": {
+    "start": "uvicorn main:app --host 0.0.0.0 --port 8000",
+    "dev": "uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "test": "python -m pytest",
+    "install-paddle": "pip install paddleocr paddlepaddle opencv-python"
+  },
+  "dependencies": {
+    "fastapi": ">=0.104.0",
+    "uvicorn": ">=0.24.0",
+    "pydantic": ">=2.5.0",
+    "python-multipart": ">=0.0.6"
+  },
+  "optional_dependencies": {
+    "ocr": ["paddleocr", "paddlepaddle", "opencv-python", "numpy"]
+  }
+}

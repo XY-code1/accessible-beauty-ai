@@ -11,3 +11,27 @@ samples/private/
 !.env.example
 *.log
 research/feishu-read-authorization*.png
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OCR Models
+backend/inference/
+
+# IDE
+.idea/
+.vscode/
