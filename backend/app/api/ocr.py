@@ -3,6 +3,7 @@
 POST /api/ocr/ingredient
 """
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi.concurrency import run_in_threadpool
 from typing import Optional
 from app.models import OcrIngredientRequest, OcrIngredientResponse
 from app.services.ocr_service import ImageTooLargeError, OcrService
@@ -92,9 +93,10 @@ async def recognize_ingredients(request: OcrIngredientRequest) -> OcrIngredientR
         service = get_ocr_service()
         
         # 处理图片
-        result = service.process_image(
+        result = await run_in_threadpool(
+            service.process_image,
             image_base64=request.imageBase64,
-            return_matches=request.returnMatches
+            return_matches=request.returnMatches,
         )
         
         return OcrIngredientResponse(
@@ -141,9 +143,10 @@ async def recognize_ingredients_file(
         
         # 调用OCR服务
         service = get_ocr_service()
-        result = service.process_image(
+        result = await run_in_threadpool(
+            service.process_image,
             image_base64=image_base64,
-            return_matches=True
+            return_matches=True,
         )
         
         # 如果提供了肤质标签，检查警告

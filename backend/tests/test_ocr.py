@@ -88,6 +88,21 @@ def test_uploaded_image_accepts_valid_png(ocr_service):
     )
 
 
+@pytest.mark.parametrize("file_upload", [False, True])
+def test_routes_offload_ocr_processing(monkeypatch, ocr_service, file_upload):
+    """Verify synchronous OCR work is dispatched through FastAPI's thread pool."""
+    _, service = ocr_service
+    threadpool = AsyncMock(side_effect=lambda func, **kwargs: func(**kwargs))
+    monkeypatch.setattr(ocr, "run_in_threadpool", threadpool)
+    contents = PNG_HEADER + b"x"
+
+    response = post_image(contents, file_upload)
+
+    assert response.status_code == 200
+    threadpool.assert_awaited_once()
+    assert threadpool.await_args.args == (service.process_image,)
+
+
 @pytest.mark.parametrize(
     ("contents", "content_type", "status", "code"),
     [
