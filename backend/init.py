@@ -17,7 +17,7 @@ def check_python_version():
 
 def check_dependencies():
     """检查依赖包"""
-    required = ["fastapi", "uvicorn", "pydantic"]
+    required = ["fastapi", "uvicorn", "pydantic", "python_multipart"]
     optional = ["paddleocr", "paddlepaddle", "cv2"]
     
     print("\n=== 必需依赖 ===")
