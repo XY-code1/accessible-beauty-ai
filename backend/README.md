@@ -88,6 +88,8 @@ python -m pytest tests
 | `/api/ocr/ingredient` | POST | OCR成分识别 |
 | `/api/ocr/ingredient/file` | POST | OCR文件上传 |
 
+OCR图片大小上限为10 MiB；JSON请求按Base64解码后的大小计算，文件上传按文件字节数计算，超限返回HTTP 413。
+
 ## 自测指南
 
 详见下文 `自测说明.md`

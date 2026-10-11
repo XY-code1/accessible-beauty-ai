@@ -12,6 +12,8 @@ import os
 
 router = APIRouter()
 
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MiB of decoded image data
+
 # 全局OCR服务实例
 _ocr_service: OcrService = None
 
@@ -43,6 +45,15 @@ async def recognize_ingredients(request: OcrIngredientRequest) -> OcrIngredientR
     上传产品图片，识别其中的美妆成分
     """
     try:
+        # Check the encoded length and padding before the service decodes it.
+        encoded_size = len(request.imageBase64)
+        padding = 2 if request.imageBase64.endswith("==") else int(request.imageBase64.endswith("="))
+        if (
+            encoded_size > 4 * ((MAX_IMAGE_SIZE + 2) // 3)
+            or encoded_size * 3 // 4 - padding > MAX_IMAGE_SIZE
+        ):
+            raise HTTPException(status_code=413, detail="Image exceeds the 10 MiB size limit")
+
         service = get_ocr_service()
         
         # 处理图片
@@ -59,6 +70,8 @@ async def recognize_ingredients(request: OcrIngredientRequest) -> OcrIngredientR
             message=f"识别完成，发现 {len(matched)} 个成分"
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         return OcrIngredientResponse(
             success=False,
@@ -81,7 +94,9 @@ async def recognize_ingredients_file(
     """
     try:
         # 读取文件内容
-        contents = await file.read()
+        contents = await file.read(MAX_IMAGE_SIZE + 1)
+        if len(contents) > MAX_IMAGE_SIZE:
+            raise HTTPException(status_code=413, detail="Image exceeds the 10 MiB size limit")
         
         # 转换为Base64
         image_base64 = base64.b64encode(contents).decode("utf-8")
@@ -107,6 +122,8 @@ async def recognize_ingredients_file(
             message=f"识别完成，发现 {len(matched)} 个成分"
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         return OcrIngredientResponse(
             success=False,
