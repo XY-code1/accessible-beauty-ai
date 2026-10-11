@@ -38,6 +38,8 @@ def check_dependencies():
         try:
             if package == "cv2":
                 import cv2
+            elif package == "paddlepaddle":
+                __import__("paddle")
             else:
                 __import__(package)
             print(f"✅ {package}")
