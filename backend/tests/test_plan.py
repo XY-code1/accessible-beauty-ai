@@ -39,7 +39,7 @@ def test_plan_failure_hides_exception_details_and_logs_traceback(
         "steps": [],
         "totalDuration": 0,
         "omittedCount": 0,
-        "message": "方案生成失败",
+        "message": "PLAN_GENERATION_FAILED: 方案生成失败，请稍后重试",
     }
     records = [record for record in caplog.records if record.name == plan.__name__]
     assert len(records) == 1
