@@ -254,6 +254,9 @@ class PlanEngine:
                     # 保持essential但提示精简
                     pass  # 不省略，只在后续调整产品
             
+            if not step.essential:
+                step.duration = 0
+
             pruned_steps.append(step)
         
         return pruned_steps
