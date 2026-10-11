@@ -49,6 +49,10 @@ ALL_STEPS_CONFIG = {
     }
 }
 
+MAX_PLAN_STEPS = len(ALL_STEPS_CONFIG)
+MAX_STEP_DURATION_SECONDS = 10 * 60
+MAX_TOTAL_DURATION_SECONDS = MAX_PLAN_STEPS * MAX_STEP_DURATION_SECONDS
+
 # 场景适配：是否需要勾勒轮廓
 SCENE_NEED_DEFINE: Dict[Scene, bool] = {
     Scene.DAILY: False,   # 日常不需要精细勾勒
@@ -174,9 +178,16 @@ class PlanEngine:
         
         # 第三层：成分触发替换
         steps = self._layer3_ingredient_replacement(steps, profile)
+
+        if len(steps) > MAX_PLAN_STEPS:
+            raise ValueError("PLAN_STEP_LIMIT_EXCEEDED")
+        if any(step.duration < 0 or step.duration > MAX_STEP_DURATION_SECONDS for step in steps):
+            raise ValueError("PLAN_STEP_DURATION_INVALID")
         
         # 计算总时长
         total_duration = sum(s.duration for s in steps)
+        if total_duration > MAX_TOTAL_DURATION_SECONDS:
+            raise ValueError("PLAN_TOTAL_DURATION_EXCEEDED")
         
         # 统计省略步骤数
         omitted_count = sum(1 for s in steps if not s.essential)

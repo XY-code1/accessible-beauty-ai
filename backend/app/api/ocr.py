@@ -3,16 +3,49 @@
 POST /api/ocr/ingredient
 """
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from typing import Optional, List
-from app.models import OcrIngredientRequest, OcrIngredientResponse, Ingredient
+from typing import Optional
+from app.models import OcrIngredientRequest, OcrIngredientResponse
 from app.services.ocr_service import OcrService
 from app.services.knowledge_base import IngredientStore
 import base64
+import binascii
+import logging
 import os
 
 router = APIRouter()
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MiB of decoded image data
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+
+logger = logging.getLogger(__name__)
+
+
+def _error(status_code: int, code: str, message: str) -> HTTPException:
+    return HTTPException(status_code=status_code, detail={"code": code, "message": message})
+
+
+def _detect_image_type(contents: bytes) -> Optional[str]:
+    if contents.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if contents.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if len(contents) >= 12 and contents.startswith(b"RIFF") and contents[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+def _validate_image(contents: bytes, declared_type: Optional[str] = None) -> str:
+    if len(contents) > MAX_IMAGE_SIZE:
+        raise _error(413, "IMAGE_TOO_LARGE", "图片超过 10 MiB 大小限制")
+
+    detected_type = _detect_image_type(contents)
+    if detected_type is None:
+        raise _error(415, "UNSUPPORTED_IMAGE_TYPE", "仅支持 PNG、JPEG 或 WebP 图片")
+    if declared_type and declared_type.lower() not in ALLOWED_IMAGE_TYPES:
+        raise _error(415, "UNSUPPORTED_IMAGE_TYPE", "仅支持 PNG、JPEG 或 WebP 图片")
+    if declared_type and declared_type.lower() != detected_type:
+        raise _error(415, "IMAGE_TYPE_MISMATCH", "图片内容与声明类型不一致")
+    return detected_type
 
 # 全局OCR服务实例
 _ocr_service: OcrService = None
@@ -45,14 +78,13 @@ async def recognize_ingredients(request: OcrIngredientRequest) -> OcrIngredientR
     上传产品图片，识别其中的美妆成分
     """
     try:
-        # Check the encoded length and padding before the service decodes it.
-        encoded_size = len(request.imageBase64)
-        padding = 2 if request.imageBase64.endswith("==") else int(request.imageBase64.endswith("="))
-        if (
-            encoded_size > 4 * ((MAX_IMAGE_SIZE + 2) // 3)
-            or encoded_size * 3 // 4 - padding > MAX_IMAGE_SIZE
-        ):
-            raise HTTPException(status_code=413, detail="Image exceeds the 10 MiB size limit")
+        if len(request.imageBase64) > 4 * ((MAX_IMAGE_SIZE + 2) // 3):
+            raise _error(413, "IMAGE_TOO_LARGE", "图片超过 10 MiB 大小限制")
+        try:
+            image_data = base64.b64decode(request.imageBase64, validate=True)
+        except (binascii.Error, ValueError):
+            raise _error(422, "INVALID_IMAGE_BASE64", "图片数据不是有效的 Base64 编码")
+        _validate_image(image_data)
 
         service = get_ocr_service()
         
@@ -72,13 +104,14 @@ async def recognize_ingredients(request: OcrIngredientRequest) -> OcrIngredientR
         
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
+        logger.exception("OCR JSON request failed")
         return OcrIngredientResponse(
             success=False,
             recognizedTexts=[],
             matchedIngredients=[],
             warnings=[],
-            message=f"OCR处理失败: {str(e)}"
+            message="OCR_PROCESS_FAILED: OCR处理失败，请稍后重试"
         )
 
 
@@ -95,8 +128,7 @@ async def recognize_ingredients_file(
     try:
         # 读取文件内容
         contents = await file.read(MAX_IMAGE_SIZE + 1)
-        if len(contents) > MAX_IMAGE_SIZE:
-            raise HTTPException(status_code=413, detail="Image exceeds the 10 MiB size limit")
+        _validate_image(contents, file.content_type)
         
         # 转换为Base64
         image_base64 = base64.b64encode(contents).decode("utf-8")
@@ -124,11 +156,12 @@ async def recognize_ingredients_file(
         
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
+        logger.exception("OCR upload request failed")
         return OcrIngredientResponse(
             success=False,
             recognizedTexts=[],
             matchedIngredients=[],
             warnings=[],
-            message=f"文件处理失败: {str(e)}"
+            message="OCR_UPLOAD_FAILED: 文件处理失败，请稍后重试"
         )

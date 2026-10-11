@@ -3,10 +3,12 @@
 图片预处理 -> 文字识别 -> 成分匹配流水线
 """
 import base64
-import io
-import re
-from typing import List, Tuple, Optional
+import logging
+from typing import List, Tuple
 from app.models import Ingredient
+
+
+logger = logging.getLogger(__name__)
 
 
 class OcrUnavailableError(RuntimeError):
@@ -25,6 +27,7 @@ class OcrService:
         """
         self.ingredients = ingredients_data
         self._ingredient_names = self._build_name_index()
+        self._ocr_engine = None
         
         # OCR库可用性检查
         self._ocr_available = self._check_ocr_availability()
@@ -91,8 +94,9 @@ class OcrService:
             
         except OcrUnavailableError:
             return [], [], ["OCR不可用"]
-        except Exception as e:
-            return [], [], [f"图片处理错误: {str(e)}"]
+        except Exception:
+            logger.exception("Image processing failed")
+            return [], [], ["IMAGE_PROCESS_FAILED: 图片处理失败，请稍后重试"]
         
         return recognized_texts, matched_ingredients, warnings
     
@@ -161,16 +165,7 @@ class OcrService:
             return texts
         
         try:
-            # 尝试使用PaddleOCR
-            from paddleocr import PaddleOCR
-            
-            ocr = PaddleOCR(
-                lang='ch',  # 中文
-                use_angle_cls=True,
-                show_log=False
-            )
-            
-            result = ocr.ocr(preprocessed_image, cls=True)
+            result = self._get_ocr_engine().ocr(preprocessed_image, cls=True)
             
             if result and result[0]:
                 for line in result[0]:
@@ -183,6 +178,21 @@ class OcrService:
             raise OcrUnavailableError("OCR不可用") from e
         
         return texts
+
+    def _get_ocr_engine(self):
+        """Lazily create and reuse one PaddleOCR engine per service process."""
+        if self._ocr_engine is None:
+            try:
+                from paddleocr import PaddleOCR
+
+                self._ocr_engine = PaddleOCR(
+                    lang="ch",
+                    use_angle_cls=True,
+                    show_log=False,
+                )
+            except Exception as exc:
+                raise OcrUnavailableError("OCR不可用") from exc
+        return self._ocr_engine
     
     def _match_ingredients(self, texts: List[str]) -> Tuple[List[Ingredient], List[str]]:
         """

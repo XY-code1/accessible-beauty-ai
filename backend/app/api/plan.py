@@ -3,18 +3,18 @@
 POST /api/plan
 """
 from fastapi import APIRouter
-from app.models import PlanRequest, PlanResponse, PlanStep
+from app.models import PlanRequest, PlanResponse
 from app.services.plan_engine import PlanEngine
 from app.services.knowledge_base import IngredientStore
-import json
 import logging
 import os
+from typing import Optional
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # 全局规则引擎实例
-_plan_engine: PlanEngine = None
+_plan_engine: Optional[PlanEngine] = None
 
 
 def get_plan_engine() -> PlanEngine:
@@ -63,7 +63,7 @@ async def generate_plan(request: PlanRequest) -> PlanResponse:
             steps=[],
             totalDuration=0,
             omittedCount=0,
-            message="方案生成失败"
+            message="PLAN_GENERATION_FAILED: 方案生成失败，请稍后重试"
         )
 
 
@@ -88,3 +88,4 @@ async def list_steps():
             for step, config in ALL_STEPS_CONFIG.items()
         ]
     }
+

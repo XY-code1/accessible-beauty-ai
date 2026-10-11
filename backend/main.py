@@ -4,10 +4,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import logging
 import time
 
 from app.api import intent, plan, ingredient, ocr
 from app.models import HealthResponse
+
+
+logger = logging.getLogger(__name__)
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -58,12 +62,16 @@ async def health_check() -> HealthResponse:
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """全局异常处理"""
+    logger.error(
+        "Unhandled API error",
+        exc_info=(type(exc), exc, exc.__traceback__),
+    )
     return JSONResponse(
         status_code=500,
         content={
             "success": False,
-            "message": f"服务器内部错误: {str(exc)}",
-            "detail": str(exc) if app.debug else None
+            "code": "INTERNAL_SERVER_ERROR",
+            "message": "服务器内部错误，请稍后重试"
         }
     )
 

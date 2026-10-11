@@ -40,3 +40,31 @@ def test_successful_ocr_preserves_results_without_unavailable_warning(service, m
     monkeypatch.setitem(sys.modules, "paddleocr", SimpleNamespace(PaddleOCR=Mock(return_value=engine)))
 
     assert service.process_image("aW1hZ2U=") == (texts, [], [])
+
+
+def test_paddleocr_is_lazily_loaded_once_and_reused(service, monkeypatch):
+    engine = Mock()
+    engine.ocr.return_value = [[]]
+    constructor = Mock(return_value=engine)
+    monkeypatch.setitem(
+        sys.modules, "paddleocr", SimpleNamespace(PaddleOCR=constructor)
+    )
+
+    service._extract_text(object())
+    service._extract_text(object())
+
+    constructor.assert_called_once_with(
+        lang="ch", use_angle_cls=True, show_log=False
+    )
+    assert engine.ocr.call_count == 2
+
+
+def test_unexpected_processing_error_is_sanitized(service, monkeypatch):
+    monkeypatch.setattr(
+        service, "_decode_image", Mock(side_effect=RuntimeError("secret path"))
+    )
+
+    _, _, warnings = service.process_image("aW1hZ2U=")
+
+    assert warnings == ["IMAGE_PROCESS_FAILED: 图片处理失败，请稍后重试"]
+    assert "secret path" not in warnings[0]

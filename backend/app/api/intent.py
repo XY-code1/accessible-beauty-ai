@@ -2,11 +2,13 @@
 无界美妆 - 意图识别API
 POST /api/intent
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+import logging
 from app.models import IntentRequest, IntentResponse, BeautyParameters
 from app.services.plan_engine import IntentEngine
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # 全局意图引擎实例
 _intent_engine = IntentEngine()
@@ -54,7 +56,8 @@ async def parse_intent(request: IntentRequest) -> IntentResponse:
             message="意图解析成功"
         )
         
-    except Exception as e:
+    except Exception:
+        logger.exception("Intent parsing failed; using defaults")
         # 静默降级
         default_params = BeautyParameters(
             scene="daily",
@@ -67,5 +70,5 @@ async def parse_intent(request: IntentRequest) -> IntentResponse:
             parameters=default_params,
             confidence=0.0,
             fallback=True,
-            message=f"解析异常，使用默认参数: {str(e)}"
+            message="INTENT_FALLBACK: 解析失败，已使用默认参数"
         )

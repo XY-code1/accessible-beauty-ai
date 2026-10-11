@@ -1,7 +1,12 @@
 import pytest
 
 from app.models import BeautyParameters, BeautyProfile, Step
-from app.services.plan_engine import OMISSION_REASONS, PlanEngine
+from app.services.plan_engine import (
+    MAX_PLAN_STEPS,
+    MAX_STEP_DURATION_SECONDS,
+    OMISSION_REASONS,
+    PlanEngine,
+)
 
 
 @pytest.mark.parametrize(
@@ -56,3 +61,32 @@ def test_pruning_zeros_preexisting_nonessential_step_without_mutating_input():
     assert pruned_steps[0].duration == 0
     assert pruned_steps[0].omittedReason == "Already prepared"
     assert steps[0].duration == 60
+
+
+def test_plan_rejects_more_than_the_supported_step_limit(monkeypatch):
+    engine = PlanEngine([])
+    params = BeautyParameters(scene="work", style="matte", intensity="medium")
+    base = engine._layer1_base_steps(params)
+    monkeypatch.setattr(
+        engine,
+        "_layer1_base_steps",
+        lambda _: base + [base[0].model_copy()] * (MAX_PLAN_STEPS + 1),
+    )
+
+    with pytest.raises(ValueError, match="PLAN_STEP_LIMIT_EXCEEDED"):
+        engine.generate_plan(params)
+
+
+def test_plan_rejects_overlong_step_duration(monkeypatch):
+    engine = PlanEngine([])
+    params = BeautyParameters(scene="work", style="matte", intensity="medium")
+
+    def make_overlong(steps, _profile):
+        result = [step.model_copy() for step in steps]
+        result[0].duration = MAX_STEP_DURATION_SECONDS + 1
+        return result
+
+    monkeypatch.setattr(engine, "_layer3_ingredient_replacement", make_overlong)
+
+    with pytest.raises(ValueError, match="PLAN_STEP_DURATION_INVALID"):
+        engine.generate_plan(params)
