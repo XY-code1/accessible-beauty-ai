@@ -7,9 +7,11 @@ from app.models import PlanRequest, PlanResponse, PlanStep
 from app.services.plan_engine import PlanEngine
 from app.services.knowledge_base import IngredientStore
 import json
+import logging
 import os
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # 全局规则引擎实例
 _plan_engine: PlanEngine = None
@@ -54,13 +56,14 @@ async def generate_plan(request: PlanRequest) -> PlanResponse:
             message="方案生成成功"
         )
         
-    except Exception as e:
+    except Exception:
+        logger.exception("Plan generation failed")
         return PlanResponse(
             success=False,
             steps=[],
             totalDuration=0,
             omittedCount=0,
-            message=f"方案生成失败: {str(e)}"
+            message="方案生成失败"
         )
 
 
