@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -41,7 +42,8 @@ def test_ingredient_initialization_errors_propagate(
 
 @pytest.mark.parametrize("ingredient_id", ["ing_001", "unknown"])
 def test_ingredient_lookup_preserves_nullable_result(monkeypatch, ingredient_id):
-    store = IngredientStore("data/ingredients.json")
+    catalog_path = Path(__file__).resolve().parents[1] / "data" / "ingredients.json"
+    store = IngredientStore(str(catalog_path))
     monkeypatch.setattr(ingredient, "_ingredient_store", store)
 
     with TestClient(app) as client:

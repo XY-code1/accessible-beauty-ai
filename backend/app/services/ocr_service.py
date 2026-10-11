@@ -8,7 +8,7 @@ from io import BytesIO
 import logging
 import warnings as python_warnings
 from typing import List, Tuple
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from app.models import Ingredient
 
 
@@ -103,6 +103,8 @@ class OcrService:
                             raise ImageTooLargeError("图片超过 1600 万像素限制")
             except (Image.DecompressionBombWarning, Image.DecompressionBombError) as exc:
                 raise ImageTooLargeError("图片超过 1600 万像素限制") from exc
+            except (UnidentifiedImageError, OSError):
+                return OcrResult([], [], ["图片解码失败"], success=False)
             image = self._decode_image(image_data)
             
             if image is None:
