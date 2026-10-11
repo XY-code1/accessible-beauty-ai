@@ -3,7 +3,7 @@
 严格对齐 PRD 第9章契约
 """
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
 
@@ -84,12 +84,12 @@ class Ingredient(BaseModel):
     id: str = Field(..., description="成分唯一标识")
     name: str = Field(..., description="成分名称")
     nameZh: str = Field(..., description="中文名称")
-    category: str = Field(..., description="成分类别(着色/养护/定型)")
+    category: Literal["着色", "养护", "定型"] = Field(..., description="成分类别(着色/养护/定型)")
     description: str = Field(..., description="成分描述")
     benefits: List[str] = Field(default_factory=list, description="功效")
-    cautionGroups: List[str] = Field(
+    cautionGroups: List[Literal["acne", "dry", "retinol", "sensitive"]] = Field(
         default_factory=list, 
-        description="注意人群标签(sensitive/dry/oily/acne/retinol)"
+        description="注意人群标签(acne/dry/retinol/sensitive)"
     )
     
     class Config:
