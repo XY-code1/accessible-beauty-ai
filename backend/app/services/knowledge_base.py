@@ -22,14 +22,9 @@ class IngredientStore:
     
     def _load_data(self):
         """加载数据"""
-        try:
-            with open(self.data_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                self._ingredients = [Ingredient(**item) for item in data]
-        except FileNotFoundError:
-            self._ingredients = []
-        except json.JSONDecodeError:
-            self._ingredients = []
+        with open(self.data_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            self._ingredients = [Ingredient(**item) for item in data]
     
     def reload(self):
         """重新加载数据"""
