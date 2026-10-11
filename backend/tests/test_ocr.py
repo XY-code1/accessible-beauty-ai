@@ -10,7 +10,7 @@ from PIL import Image
 from fastapi import HTTPException, UploadFile
 from fastapi.testclient import TestClient
 
-from app.api import ocr
+from app.routes import ocr
 from app.services import ocr_service as service_module
 from app.services.ocr_service import OcrResult, OcrService
 from main import app
@@ -31,7 +31,8 @@ def ocr_service(monkeypatch):
     return factory, service
 
 
-def test_json_image_accepts_valid_png(ocr_service):
+@pytest.mark.parametrize("skin_tags", [None, [], ["sensitive", "dry"]])
+def test_json_image_accepts_valid_png(ocr_service, skin_tags):
     """Verify PNG data at the size limit reaches OCR with the requested match flag."""
     factory, service = ocr_service
     contents = PNG_HEADER + b"x" * 8
@@ -39,14 +40,14 @@ def test_json_image_accepts_valid_png(ocr_service):
 
     response = client.post(
         "/api/ocr/ingredient",
-        json={"imageBase64": encoded, "returnMatches": False},
+        json={"imageBase64": encoded, "returnMatches": False, "skinTags": skin_tags},
     )
 
     assert response.status_code == 200
     assert response.json()["success"] is True
     factory.assert_called_once()
     service.process_image.assert_called_once_with(
-        image_base64=encoded, return_matches=False
+        image_base64=encoded, return_matches=False, skin_tags=skin_tags or None
     )
 
 
@@ -69,6 +70,38 @@ def test_json_image_rejects_invalid_input(ocr_service, payload, status, code):
     factory.assert_not_called()
 
 
+def test_json_skin_tags_generate_ingredient_warnings(monkeypatch):
+    monkeypatch.setattr(OcrService, "_check_ocr_availability", lambda self: True)
+    service = OcrService([{
+        "id": "retinol",
+        "name": "Retinol",
+        "nameZh": "视黄醇",
+        "category": "养护",
+        "description": "Test ingredient",
+        "cautionGroups": ["sensitive"],
+    }])
+    monkeypatch.setattr(service, "_decode_image", lambda data: object())
+    monkeypatch.setattr(service, "_preprocess_image", lambda image: image)
+    monkeypatch.setattr(service, "_extract_text", lambda image: ["Retinol"])
+    monkeypatch.setattr(ocr, "get_ocr_service", lambda: service)
+    output = io.BytesIO()
+    Image.new("RGB", (1, 1)).save(output, format="PNG")
+
+    response = client.post(
+        "/api/ocr/ingredient",
+        json={
+            "imageBase64": base64.b64encode(output.getvalue()).decode("ascii"),
+            "skinTags": ["sensitive"],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert body["matchedIngredients"][0]["id"] == "retinol"
+    assert "⚠️ 视黄醇 不适合 sensitive 肌肤使用，请注意" in body["warnings"]
+
+
 def test_uploaded_image_accepts_valid_png(ocr_service):
     """Verify a PNG upload at the size limit is encoded and passed to OCR."""
     factory, service = ocr_service
@@ -85,6 +118,7 @@ def test_uploaded_image_accepts_valid_png(ocr_service):
     service.process_image.assert_called_once_with(
         image_base64=base64.b64encode(contents).decode("ascii"),
         return_matches=True,
+        skin_tags=None,
     )
 
 
@@ -187,6 +221,7 @@ def post_image(contents, file_upload, image_format="PNG", return_matches=True):
 @pytest.mark.parametrize("file_upload", [False, True])
 @pytest.mark.parametrize("image_format", ["PNG", "JPEG", "WEBP"])
 def test_routes_reject_excess_pixels_before_decoding(monkeypatch, file_upload, image_format):
+    monkeypatch.setattr(OcrService, "_check_ocr_availability", lambda self: True)
     monkeypatch.setattr(service_module, "MAX_IMAGE_PIXELS", 4)
     service = OcrService([])
     decoder = Mock()
@@ -208,6 +243,7 @@ def test_routes_reject_excess_pixels_before_decoding(monkeypatch, file_upload, i
 @pytest.mark.parametrize("file_upload, return_matches", [(False, True), (False, False), (True, True)])
 @pytest.mark.parametrize("failure", ["import", "initialization", "recognition"])
 def test_routes_report_ocr_unavailable_as_failure(monkeypatch, file_upload, return_matches, failure):
+    monkeypatch.setattr(OcrService, "_check_ocr_availability", lambda self: True)
     service = OcrService([])
     monkeypatch.setattr(service, "_decode_image", lambda data: object())
     monkeypatch.setattr(service, "_preprocess_image", lambda image: image)
@@ -232,9 +268,10 @@ def test_routes_report_ocr_unavailable_as_failure(monkeypatch, file_upload, retu
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is False
+    assert body["unavailable"] is True
     assert body["recognizedTexts"] == []
     assert body["matchedIngredients"] == []
     assert body["warnings"] == ["OCR不可用"]
-    assert body["message"].startswith("OCR_")
+    assert body["message"].startswith("OCR_FEATURE_UNAVAILABLE:")
     assert "secret" not in str(body)
     warning_checker.assert_not_called()
