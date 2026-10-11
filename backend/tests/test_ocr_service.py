@@ -1,6 +1,7 @@
 import base64
 import io
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
@@ -95,6 +96,31 @@ def test_concurrent_engine_access_initializes_paddleocr_once(service, monkeypatc
 
     assert engines == [engine, engine]
     constructor.assert_called_once()
+
+
+def test_concurrent_text_extraction_serializes_shared_engine(service, monkeypatch):
+    """Verify the reused PaddleOCR engine never handles overlapping inference calls."""
+    state = {"active": 0, "maximum": 0}
+    state_lock = threading.Lock()
+
+    def recognize(*args, **kwargs):
+        with state_lock:
+            state["active"] += 1
+            state["maximum"] = max(state["maximum"], state["active"])
+        time.sleep(0.05)
+        with state_lock:
+            state["active"] -= 1
+        return [[]]
+
+    engine = Mock()
+    engine.ocr.side_effect = recognize
+    monkeypatch.setattr(service, "_ocr_engine", engine)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        list(executor.map(lambda _: service._extract_text(object()), range(2)))
+
+    assert state["maximum"] == 1
+    assert engine.ocr.call_count == 2
 
 
 def test_unexpected_processing_error_is_sanitized(service, monkeypatch):

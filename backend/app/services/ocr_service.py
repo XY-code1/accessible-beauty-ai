@@ -47,6 +47,7 @@ class OcrService:
         self._ingredient_names = self._build_name_index()
         self._ocr_engine = None
         self._ocr_engine_lock = threading.Lock()
+        self._ocr_inference_lock = threading.Lock()
         
         # OCR库可用性检查
         self._ocr_available = self._check_ocr_availability()
@@ -197,7 +198,9 @@ class OcrService:
             return texts
         
         try:
-            result = self._get_ocr_engine().ocr(preprocessed_image, cls=True)
+            engine = self._get_ocr_engine()
+            with self._ocr_inference_lock:
+                result = engine.ocr(preprocessed_image, cls=True)
             
             if result and result[0]:
                 for line in result[0]:
